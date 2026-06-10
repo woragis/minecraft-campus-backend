@@ -54,6 +54,9 @@ func (s *Service) CreateForSponsor(ctx context.Context, sponsorMinecraftUUID uui
 	if sponsor.Status == models.PlayerStatusBanned {
 		return nil, apperrors.Forbidden(apperrors.CodeInvitePostInternalV1ServiceSponsorBanned, apperrors.MsgInvitePostInternalV1ServiceSponsorBanned)
 	}
+	if sponsor.Status == models.PlayerStatusProbation {
+		return nil, apperrors.Forbidden(apperrors.CodeInvitePostInternalV1ServiceSponsorProbation, apperrors.MsgInvitePostInternalV1ServiceSponsorProbation)
+	}
 
 	exists, err := s.repo.HasPendingForTargetUsername(ctx, targetUsername)
 	if err != nil {

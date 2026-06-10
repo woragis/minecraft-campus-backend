@@ -18,9 +18,13 @@ import (
 
 	"github.com/google/uuid"
 	gameserverrepo "github.com/woragis/minecraft-campus-backend/server/internal/gameserver/repository"
+	guildrepo "github.com/woragis/minecraft-campus-backend/server/internal/guild/repository"
+	guildsvc "github.com/woragis/minecraft-campus-backend/server/internal/guild/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/httpserver"
 	inviterepo "github.com/woragis/minecraft-campus-backend/server/internal/invite/repository"
 	invitesvc "github.com/woragis/minecraft-campus-backend/server/internal/invite/service"
+	trustrepo "github.com/woragis/minecraft-campus-backend/server/internal/trust/repository"
+	trustsvc "github.com/woragis/minecraft-campus-backend/server/internal/trust/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/middleware"
 	"github.com/woragis/minecraft-campus-backend/server/internal/migrate"
 	"github.com/woragis/minecraft-campus-backend/server/internal/models"
@@ -106,6 +110,9 @@ func openTestDB(t *testing.T) (*gorm.DB, *sql.DB) {
 		&models.Invite{},
 		&models.GameServer{},
 		&models.ServerPlayer{},
+		&models.Guild{},
+		&models.GuildMember{},
+		&models.TrustEvent{},
 	); err != nil {
 		t.Fatalf("automigrate: %v", err)
 	}
@@ -132,13 +139,19 @@ func newTestHandler(db *gorm.DB) http.Handler {
 	playerRepository := playerrepo.New(db)
 	inviteRepository := inviterepo.New(db)
 	gameServerRepository := gameserverrepo.New(db)
-	playerService := playersvc.New(playerRepository, inviteRepository, gameServerRepository, 7)
+	guildRepository := guildrepo.New(db)
+	trustRepository := trustrepo.New(db)
+	trustService := trustsvc.New(trustRepository, playerRepository)
+	playerService := playersvc.New(playerRepository, inviteRepository, gameServerRepository, 7, trustService)
 	inviteService := invitesvc.New(inviteRepository, playerRepository)
+	guildService := guildsvc.New(guildRepository, playerRepository)
 	app := &httpserver.App{
 		DB:           db,
 		PluginAPIKey: testPluginKey,
 		Players:      playerService,
 		Invites:      inviteService,
+		Guilds:       guildService,
+		Trust:        trustService,
 	}
 	return httpserver.NewHandler(app, middleware.Config{})
 }

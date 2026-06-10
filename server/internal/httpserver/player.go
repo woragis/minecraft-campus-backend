@@ -5,15 +5,23 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/woragis/minecraft-campus-backend/server/internal/apperrors"
+	"github.com/woragis/minecraft-campus-backend/server/internal/models"
+	guildsvc "github.com/woragis/minecraft-campus-backend/server/internal/guild/service"
 	playersvc "github.com/woragis/minecraft-campus-backend/server/internal/player/service"
 )
 
 type playerHandler struct {
-	svc *playersvc.Service
+	svc      *playersvc.Service
+	guildSvc *guildsvc.Service
 }
 
-func newPlayerHandler(svc *playersvc.Service) *playerHandler {
-	return &playerHandler{svc: svc}
+type playerProfile struct {
+	*models.Player
+	Guild *models.Guild `json:"guild,omitempty"`
+}
+
+func newPlayerHandler(svc *playersvc.Service, guildSvc *guildsvc.Service) *playerHandler {
+	return &playerHandler{svc: svc, guildSvc: guildSvc}
 }
 
 func (h *playerHandler) getByID(w http.ResponseWriter, r *http.Request) {
@@ -27,7 +35,7 @@ func (h *playerHandler) getByID(w http.ResponseWriter, r *http.Request) {
 		apperrors.WriteError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, player)
+	writeJSON(w, http.StatusOK, h.profile(r, player))
 }
 
 func (h *playerHandler) getByMinecraftUUID(w http.ResponseWriter, r *http.Request) {
@@ -41,7 +49,7 @@ func (h *playerHandler) getByMinecraftUUID(w http.ResponseWriter, r *http.Reques
 		apperrors.WriteError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, player)
+	writeJSON(w, http.StatusOK, h.profile(r, player))
 }
 
 func (h *playerHandler) listInvitees(w http.ResponseWriter, r *http.Request) {
@@ -56,4 +64,15 @@ func (h *playerHandler) listInvitees(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"invitees": players})
+}
+
+func (h *playerHandler) profile(r *http.Request, player *models.Player) playerProfile {
+	out := playerProfile{Player: player}
+	if h.guildSvc != nil {
+		guild, err := h.guildSvc.PlayerGuild(r.Context(), player.ID)
+		if err == nil && guild != nil {
+			out.Guild = guild
+		}
+	}
+	return out
 }

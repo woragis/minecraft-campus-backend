@@ -13,9 +13,13 @@ import (
 
 	"github.com/woragis/minecraft-campus-backend/server/internal/bootstrap"
 	gameserverrepo "github.com/woragis/minecraft-campus-backend/server/internal/gameserver/repository"
+	guildrepo "github.com/woragis/minecraft-campus-backend/server/internal/guild/repository"
+	guildsvc "github.com/woragis/minecraft-campus-backend/server/internal/guild/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/httpserver"
 	inviterepo "github.com/woragis/minecraft-campus-backend/server/internal/invite/repository"
 	invitesvc "github.com/woragis/minecraft-campus-backend/server/internal/invite/service"
+	trustrepo "github.com/woragis/minecraft-campus-backend/server/internal/trust/repository"
+	trustsvc "github.com/woragis/minecraft-campus-backend/server/internal/trust/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/middleware"
 	"github.com/woragis/minecraft-campus-backend/server/internal/migrate"
 	"github.com/woragis/minecraft-campus-backend/server/internal/models"
@@ -68,6 +72,9 @@ func main() {
 		&models.Invite{},
 		&models.GameServer{},
 		&models.ServerPlayer{},
+		&models.Guild{},
+		&models.GuildMember{},
+		&models.TrustEvent{},
 	); err != nil {
 		log.Fatalf("automigrate: %v", err)
 	}
@@ -75,6 +82,8 @@ func main() {
 	playerRepository := playerrepo.New(db)
 	inviteRepository := inviterepo.New(db)
 	gameServerRepository := gameserverrepo.New(db)
+	guildRepository := guildrepo.New(db)
+	trustRepository := trustrepo.New(db)
 
 	if cfg, ok := bootstrap.ParseFounderFromEnv(); ok {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -88,14 +97,18 @@ func main() {
 		}
 	}
 
-	playerService := playersvc.New(playerRepository, inviteRepository, gameServerRepository, probationDays)
+	trustService := trustsvc.New(trustRepository, playerRepository)
+	playerService := playersvc.New(playerRepository, inviteRepository, gameServerRepository, probationDays, trustService)
 	inviteService := invitesvc.New(inviteRepository, playerRepository)
+	guildService := guildsvc.New(guildRepository, playerRepository)
 
 	app := &httpserver.App{
 		DB:           db,
 		PluginAPIKey: pluginAPIKey,
 		Players:      playerService,
 		Invites:      inviteService,
+		Guilds:       guildService,
+		Trust:        trustService,
 	}
 
 	handler := httpserver.NewHandler(app, middleware.LoadConfigFromEnv())

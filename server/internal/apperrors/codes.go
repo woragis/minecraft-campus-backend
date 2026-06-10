@@ -52,6 +52,9 @@ const (
 	CodeInvitePostInternalV1ServiceSponsorBanned = "INVITE_POST_INTERNAL_V1_SERVICE_SPONSOR_BANNED"
 	MsgInvitePostInternalV1ServiceSponsorBanned  = "Banned players cannot send invites."
 
+	CodeInvitePostInternalV1ServiceSponsorProbation = "INVITE_POST_INTERNAL_V1_SERVICE_SPONSOR_PROBATION"
+	MsgInvitePostInternalV1ServiceSponsorProbation  = "Players on probation cannot send invites."
+
 	CodeInvitePostInternalV1ServicePendingExists = "INVITE_POST_INTERNAL_V1_SERVICE_PENDING_EXISTS"
 	MsgInvitePostInternalV1ServicePendingExists  = "A pending invite already exists for this username."
 
@@ -105,4 +108,100 @@ const (
 
 	CodeInviteGetV1ServiceLoadFailed = "INVITE_GET_V1_SERVICE_LOAD_FAILED"
 	MsgInviteGetV1ServiceLoadFailed  = "Could not load invite."
+)
+
+// Guilds
+const (
+	CodeGuildPostV1HandlerBodyInvalid = "GUILD_POST_V1_HANDLER_BODY_INVALID"
+	MsgGuildPostV1HandlerBodyInvalid  = "Request body must include leaderUuid and name."
+
+	CodeGuildPostV1ServiceNameInvalid = "GUILD_POST_V1_SERVICE_NAME_INVALID"
+	MsgGuildPostV1ServiceNameInvalid  = "Guild name must be between 1 and 64 characters."
+
+	CodeGuildPostV1ServiceLeaderNotFound = "GUILD_POST_V1_SERVICE_LEADER_NOT_FOUND"
+	MsgGuildPostV1ServiceLeaderNotFound  = "Leader player not found."
+
+	CodeGuildPostV1ServiceLeaderBanned = "GUILD_POST_V1_SERVICE_LEADER_BANNED"
+	MsgGuildPostV1ServiceLeaderBanned  = "Banned players cannot create guilds."
+
+	CodeGuildPostV1ServiceLeaderProbation = "GUILD_POST_V1_SERVICE_LEADER_PROBATION"
+	MsgGuildPostV1ServiceLeaderProbation  = "Players on probation cannot create guilds."
+
+	CodeGuildPostV1ServiceAlreadyMember = "GUILD_POST_V1_SERVICE_ALREADY_MEMBER"
+	MsgGuildPostV1ServiceAlreadyMember  = "Player already belongs to a guild."
+
+	CodeGuildPostV1ServiceCreateFailed = "GUILD_POST_V1_SERVICE_CREATE_FAILED"
+	MsgGuildPostV1ServiceCreateFailed  = "Could not create guild."
+
+	CodeGuildGetV1HandlerIDInvalid = "GUILD_GET_V1_HANDLER_ID_INVALID"
+	MsgGuildGetV1HandlerIDInvalid  = "Guild id must be a valid UUID."
+
+	CodeGuildGetV1ServiceNotFound = "GUILD_GET_V1_SERVICE_NOT_FOUND"
+	MsgGuildGetV1ServiceNotFound  = "Guild not found."
+
+	CodeGuildGetV1ServiceLoadFailed = "GUILD_GET_V1_SERVICE_LOAD_FAILED"
+	MsgGuildGetV1ServiceLoadFailed  = "Could not load guild."
+
+	CodeGuildListV1ServiceListFailed = "GUILD_LIST_V1_SERVICE_LIST_FAILED"
+	MsgGuildListV1ServiceListFailed  = "Could not list guilds."
+
+	CodeGuildMembersV1ServiceGuildNotFound = "GUILD_MEMBERS_V1_SERVICE_GUILD_NOT_FOUND"
+	MsgGuildMembersV1ServiceGuildNotFound  = "Guild not found."
+
+	CodeGuildMembersV1ServiceListFailed = "GUILD_MEMBERS_V1_SERVICE_LIST_FAILED"
+	MsgGuildMembersV1ServiceListFailed  = "Could not list guild members."
+
+	CodeGuildJoinV1ServicePlayerNotFound = "GUILD_JOIN_V1_SERVICE_PLAYER_NOT_FOUND"
+	MsgGuildJoinV1ServicePlayerNotFound  = "Player not found."
+
+	CodeGuildJoinV1ServiceGuildNotFound = "GUILD_JOIN_V1_SERVICE_GUILD_NOT_FOUND"
+	MsgGuildJoinV1ServiceGuildNotFound  = "Guild not found."
+
+	CodeGuildJoinV1ServiceProbation = "GUILD_JOIN_V1_SERVICE_PROBATION"
+	MsgGuildJoinV1ServiceProbation  = "Players on probation cannot join guilds."
+
+	CodeGuildJoinV1ServiceAlreadyMember = "GUILD_JOIN_V1_SERVICE_ALREADY_MEMBER"
+	MsgGuildJoinV1ServiceAlreadyMember  = "Player already belongs to a guild."
+
+	CodeGuildJoinV1ServiceFailed = "GUILD_JOIN_V1_SERVICE_FAILED"
+	MsgGuildJoinV1ServiceFailed  = "Could not join guild."
+
+	CodeGuildLeaveV1ServicePlayerNotFound = "GUILD_LEAVE_V1_SERVICE_PLAYER_NOT_FOUND"
+	MsgGuildLeaveV1ServicePlayerNotFound  = "Player not found."
+
+	CodeGuildLeaveV1ServiceGuildNotFound = "GUILD_LEAVE_V1_SERVICE_GUILD_NOT_FOUND"
+	MsgGuildLeaveV1ServiceGuildNotFound  = "Guild not found."
+
+	CodeGuildLeaveV1ServiceLeaderCannotLeave = "GUILD_LEAVE_V1_SERVICE_LEADER_CANNOT_LEAVE"
+	MsgGuildLeaveV1ServiceLeaderCannotLeave  = "Guild leader cannot leave; transfer leadership first."
+
+	CodeGuildLeaveV1ServiceNotMember = "GUILD_LEAVE_V1_SERVICE_NOT_MEMBER"
+	MsgGuildLeaveV1ServiceNotMember  = "Player is not a member of this guild."
+
+	CodeGuildLeaveV1ServiceFailed = "GUILD_LEAVE_V1_SERVICE_FAILED"
+	MsgGuildLeaveV1ServiceFailed  = "Could not leave guild."
+)
+
+// Trust
+const (
+	CodeTrustEventV1HandlerBodyInvalid = "TRUST_EVENT_V1_HANDLER_BODY_INVALID"
+	MsgTrustEventV1HandlerBodyInvalid  = "Request body must include playerId and eventType."
+
+	CodeTrustEventV1ServicePlayerNotFound = "TRUST_EVENT_V1_SERVICE_PLAYER_NOT_FOUND"
+	MsgTrustEventV1ServicePlayerNotFound  = "Player not found."
+
+	CodeTrustEventV1ServiceRecordFailed = "TRUST_EVENT_V1_SERVICE_RECORD_FAILED"
+	MsgTrustEventV1ServiceRecordFailed  = "Could not record trust event."
+
+	CodeTrustListV1ServicePlayerNotFound = "TRUST_LIST_V1_SERVICE_PLAYER_NOT_FOUND"
+	MsgTrustListV1ServicePlayerNotFound  = "Player not found."
+
+	CodeTrustListV1ServiceListFailed = "TRUST_LIST_V1_SERVICE_LIST_FAILED"
+	MsgTrustListV1ServiceListFailed  = "Could not list trust events."
+
+	CodeTrustTreeV1ServicePlayerNotFound = "TRUST_TREE_V1_SERVICE_PLAYER_NOT_FOUND"
+	MsgTrustTreeV1ServicePlayerNotFound  = "Player not found."
+
+	CodeTrustTreeV1ServiceLoadFailed = "TRUST_TREE_V1_SERVICE_LOAD_FAILED"
+	MsgTrustTreeV1ServiceLoadFailed  = "Could not load sponsor tree."
 )

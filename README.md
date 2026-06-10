@@ -42,6 +42,15 @@ backend/
 - Perfil e árvore de convites (read-only web)
 - Bootstrap automático do fundador (`BOOTSTRAP_MINECRAFT_UUID`)
 
+## Fase 2 — confiança e guildas
+
+- Trust Score v1 + eventos (`trust_events`)
+- Sponsor Score (média dos convidados + penalidade por ban)
+- Graduação automática de probation
+- Guildas (criar, entrar, sair, listar)
+- Perfil enriquecido com guilda
+- Grafo de moderação (`/v1/players/{id}/sponsor-tree`)
+
 ## Desenvolvimento
 
 ```bash
@@ -77,6 +86,16 @@ curl http://127.0.0.1:8080/health
 | GET | `/v1/players/minecraft/{minecraftUuid}` | — |
 | GET | `/v1/players/{id}/invites` | — |
 | GET | `/v1/invites/{code}` | — |
+| GET | `/v1/guilds` | — |
+| GET | `/v1/guilds/{id}` | — |
+| GET | `/v1/guilds/slug/{slug}` | — |
+| GET | `/v1/guilds/{id}/members` | — |
+| GET | `/v1/players/{id}/trust-events` | — |
+| GET | `/v1/players/{id}/sponsor-tree` | — |
+| POST | `/v1/internal/guilds` | `X-Plugin-Key` |
+| POST | `/v1/internal/guilds/{id}/join` | `X-Plugin-Key` |
+| POST | `/v1/internal/guilds/{id}/leave` | `X-Plugin-Key` |
+| POST | `/v1/internal/trust/events` | `X-Plugin-Key` |
 
 ## Bootstrap do fundador
 

@@ -21,14 +21,19 @@ type WhitelistResult struct {
 	Player  *models.Player `json:"player,omitempty"`
 }
 
+type ProbationGraduator interface {
+	TryGraduateProbation(ctx context.Context, player *models.Player) (bool, error)
+}
+
 type Service struct {
 	repo           *repository.Repository
 	inviteRepo     *inviterepo.Repository
 	gameServerRepo *gameserverrepo.Repository
 	probationDays  int
+	graduator      ProbationGraduator
 }
 
-func New(repo *repository.Repository, inviteRepo *inviterepo.Repository, gameServerRepo *gameserverrepo.Repository, probationDays int) *Service {
+func New(repo *repository.Repository, inviteRepo *inviterepo.Repository, gameServerRepo *gameserverrepo.Repository, probationDays int, graduator ProbationGraduator) *Service {
 	if probationDays <= 0 {
 		probationDays = 7
 	}
@@ -37,6 +42,20 @@ func New(repo *repository.Repository, inviteRepo *inviterepo.Repository, gameSer
 		inviteRepo:     inviteRepo,
 		gameServerRepo: gameServerRepo,
 		probationDays:  probationDays,
+		graduator:      graduator,
+	}
+}
+
+func (s *Service) maybeGraduate(ctx context.Context, player *models.Player) {
+	if s.graduator == nil || player == nil {
+		return
+	}
+	graduated, err := s.graduator.TryGraduateProbation(ctx, player)
+	if err == nil && graduated {
+		fresh, ferr := s.repo.FindByMinecraftUUID(ctx, player.MinecraftUUID)
+		if ferr == nil {
+			*player = *fresh
+		}
 	}
 }
 
@@ -85,6 +104,7 @@ func (s *Service) CheckWhitelist(ctx context.Context, minecraftUUID uuid.UUID, u
 	}
 
 	if player != nil {
+		s.maybeGraduate(ctx, player)
 		return s.whitelistExisting(player), nil
 	}
 
@@ -193,5 +213,6 @@ func (s *Service) UpsertFromPlugin(ctx context.Context, minecraftUUID uuid.UUID,
 	if err := s.gameServerRepo.TouchPlayerPresence(ctx, gs.ID, player.ID, now); err != nil {
 		return nil, apperrors.InternalCause(apperrors.CodePlayerUpsertV1ServiceFailed, apperrors.MsgPlayerUpsertV1ServiceFailed, err)
 	}
+	s.maybeGraduate(ctx, player)
 	return player, nil
 }
