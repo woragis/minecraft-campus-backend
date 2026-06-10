@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/woragis/minecraft-campus-backend/server/internal/bootstrap"
 	gameserverrepo "github.com/woragis/minecraft-campus-backend/server/internal/gameserver/repository"
 	"github.com/woragis/minecraft-campus-backend/server/internal/httpserver"
 	inviterepo "github.com/woragis/minecraft-campus-backend/server/internal/invite/repository"
@@ -74,6 +75,18 @@ func main() {
 	playerRepository := playerrepo.New(db)
 	inviteRepository := inviterepo.New(db)
 	gameServerRepository := gameserverrepo.New(db)
+
+	if cfg, ok := bootstrap.ParseFounderFromEnv(); ok {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		created, err := bootstrap.EnsureFounder(ctx, playerRepository, cfg)
+		cancel()
+		if err != nil {
+			log.Fatalf("bootstrap founder: %v", err)
+		}
+		if created {
+			log.Printf("bootstrap founder created: %s (%s)", cfg.Username, cfg.MinecraftUUID)
+		}
+	}
 
 	playerService := playersvc.New(playerRepository, inviteRepository, gameServerRepository, probationDays)
 	inviteService := invitesvc.New(inviteRepository, playerRepository)

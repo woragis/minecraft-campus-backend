@@ -40,6 +40,7 @@ backend/
 - Registro/upsert de jogadores
 - Convites (`/invite` in-game → API)
 - Perfil e árvore de convites (read-only web)
+- Bootstrap automático do fundador (`BOOTSTRAP_MINECRAFT_UUID`)
 
 ## Desenvolvimento
 
@@ -77,7 +78,17 @@ curl http://127.0.0.1:8080/health
 | GET | `/v1/players/{id}/invites` | — |
 | GET | `/v1/invites/{code}` | — |
 
+## Bootstrap do fundador
+
+```env
+BOOTSTRAP_MINECRAFT_UUID=<uuid-minecraft>
+BOOTSTRAP_USERNAME=Fundador
+```
+
+Cria um jogador `active` no primeiro boot se ainda não existir.
+
 ## Documentação
 
-- [Arquitetura](../../ARCHITECTURE.md)
+- [Arquitetura](../docs/ARCHITECTURE.md)
+- [Setup Paper](../docs/SETUP-PAPER.md)
 - [CampusWorld spec](../CAMPUSWORLD.md)
