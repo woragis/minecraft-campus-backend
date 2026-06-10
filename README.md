@@ -59,6 +59,14 @@ backend/
 - Progressão territorial por tempo de conta + trust score
 - Zonas: `urban`, `rural`, `industrial`, `historic`
 
+## Fase 4 — auditoria e rollback
+
+- `audit_events` append-only (blocos em claims)
+- Ingest em batch via plugin (`POST /v1/internal/audit/events`)
+- Rollback por jogador + janela temporal (até 24h)
+- Itens de rollback: `restore` (desfaz break) / `remove` (desfaz place)
+- Trust penalty `rollback_applied` (-5) no alvo
+
 ## Desenvolvimento
 
 ```bash
@@ -115,6 +123,12 @@ curl http://127.0.0.1:8080/health
 | DELETE | `/v1/internal/claims/{id}` | `X-Plugin-Key` |
 | GET | `/v1/internal/claims/permission` | `X-Plugin-Key` |
 | POST | `/v1/internal/alliances` | `X-Plugin-Key` |
+| GET | `/v1/players/{id}/audit-events` | — |
+| GET | `/v1/rollbacks/{id}` | — |
+| POST | `/v1/internal/audit/events` | `X-Plugin-Key` |
+| POST | `/v1/internal/rollbacks` | `X-Plugin-Key` |
+| GET | `/v1/internal/rollbacks/{id}/items` | `X-Plugin-Key` |
+| POST | `/v1/internal/rollbacks/{id}/complete` | `X-Plugin-Key` |
 
 ## Bootstrap do fundador
 

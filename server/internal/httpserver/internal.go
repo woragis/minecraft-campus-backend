@@ -5,15 +5,18 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/woragis/minecraft-campus-backend/server/internal/apperrors"
 	alliancesvc "github.com/woragis/minecraft-campus-backend/server/internal/alliance/service"
+	auditsvc "github.com/woragis/minecraft-campus-backend/server/internal/audit/service"
 	citysvc "github.com/woragis/minecraft-campus-backend/server/internal/city/service"
 	claimsvc "github.com/woragis/minecraft-campus-backend/server/internal/claim/service"
 	guildsvc "github.com/woragis/minecraft-campus-backend/server/internal/guild/service"
 	invitesvc "github.com/woragis/minecraft-campus-backend/server/internal/invite/service"
 	playersvc "github.com/woragis/minecraft-campus-backend/server/internal/player/service"
+	rollbacksvc "github.com/woragis/minecraft-campus-backend/server/internal/rollback/service"
 	trustsvc "github.com/woragis/minecraft-campus-backend/server/internal/trust/service"
 )
 
@@ -26,6 +29,8 @@ type internalHandler struct {
 	cities       *citysvc.Service
 	claims       *claimsvc.Service
 	alliances    *alliancesvc.Service
+	audit        *auditsvc.Service
+	rollback     *rollbacksvc.Service
 }
 
 func newInternalHandler(
@@ -37,6 +42,8 @@ func newInternalHandler(
 	cities *citysvc.Service,
 	claims *claimsvc.Service,
 	alliances *alliancesvc.Service,
+	audit *auditsvc.Service,
+	rollback *rollbacksvc.Service,
 ) *internalHandler {
 	return &internalHandler{
 		pluginAPIKey: pluginAPIKey,
@@ -47,6 +54,8 @@ func newInternalHandler(
 		cities:       cities,
 		claims:       claims,
 		alliances:    alliances,
+		audit:        audit,
+		rollback:     rollback,
 	}
 }
 
@@ -425,4 +434,152 @@ func (h *internalHandler) createAlliance(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	writeJSON(w, http.StatusCreated, alliance)
+}
+
+type ingestAuditBody struct {
+	Events []ingestAuditEventBody `json:"events"`
+}
+
+type ingestAuditEventBody struct {
+	MinecraftUUID string  `json:"minecraftUuid"`
+	ServerSlug    string  `json:"serverSlug"`
+	World         string  `json:"world"`
+	EventType     string  `json:"eventType"`
+	BlockX        *int    `json:"blockX"`
+	BlockY        *int    `json:"blockY"`
+	BlockZ        *int    `json:"blockZ"`
+	BlockType     string  `json:"blockType"`
+	ClaimID       *string `json:"claimId"`
+	OccurredAt    string  `json:"occurredAt"`
+}
+
+func (h *internalHandler) ingestAuditEvents(w http.ResponseWriter, r *http.Request) {
+	var body ingestAuditBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodeAuditIngestV1HandlerBodyInvalid, apperrors.MsgAuditIngestV1HandlerBodyInvalid, err))
+		return
+	}
+	if len(body.Events) == 0 {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeAuditIngestV1HandlerBodyInvalid, apperrors.MsgAuditIngestV1HandlerBodyInvalid))
+		return
+	}
+	events := make([]auditsvc.IngestEvent, 0, len(body.Events))
+	for _, ev := range body.Events {
+		mcUUID, err := uuid.Parse(strings.TrimSpace(ev.MinecraftUUID))
+		if err != nil || mcUUID == uuid.Nil || strings.TrimSpace(ev.EventType) == "" {
+			continue
+		}
+		var claimID *uuid.UUID
+		if ev.ClaimID != nil && strings.TrimSpace(*ev.ClaimID) != "" {
+			parsed, err := uuid.Parse(strings.TrimSpace(*ev.ClaimID))
+			if err == nil && parsed != uuid.Nil {
+				claimID = &parsed
+			}
+		}
+		var occurred time.Time
+		if ev.OccurredAt != "" {
+			if t, err := time.Parse(time.RFC3339, ev.OccurredAt); err == nil {
+				occurred = t
+			}
+		}
+		events = append(events, auditsvc.IngestEvent{
+			MinecraftUUID: mcUUID,
+			ServerSlug:    ev.ServerSlug,
+			World:         ev.World,
+			EventType:     ev.EventType,
+			BlockX:        ev.BlockX,
+			BlockY:        ev.BlockY,
+			BlockZ:        ev.BlockZ,
+			BlockType:     ev.BlockType,
+			ClaimID:       claimID,
+			OccurredAt:    occurred,
+		})
+	}
+	out, err := h.audit.IngestBatch(r.Context(), events)
+	if err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, out)
+}
+
+type createRollbackBody struct {
+	TargetUUID    string `json:"targetUuid"`
+	ActorUUID     string `json:"actorUuid"`
+	ServerSlug    string `json:"serverSlug"`
+	World         string `json:"world"`
+	WindowMinutes int    `json:"windowMinutes"`
+}
+
+func (h *internalHandler) createRollback(w http.ResponseWriter, r *http.Request) {
+	var body createRollbackBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodeRollbackPostV1HandlerBodyInvalid, apperrors.MsgRollbackPostV1HandlerBodyInvalid, err))
+		return
+	}
+	targetUUID, err := uuid.Parse(strings.TrimSpace(body.TargetUUID))
+	if err != nil || targetUUID == uuid.Nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeRollbackPostV1HandlerBodyInvalid, apperrors.MsgRollbackPostV1HandlerBodyInvalid))
+		return
+	}
+	actorUUID, err := uuid.Parse(strings.TrimSpace(body.ActorUUID))
+	if err != nil || actorUUID == uuid.Nil || strings.TrimSpace(body.ServerSlug) == "" || body.WindowMinutes <= 0 {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeRollbackPostV1HandlerBodyInvalid, apperrors.MsgRollbackPostV1HandlerBodyInvalid))
+		return
+	}
+	out, err := h.rollback.Create(r.Context(), rollbacksvc.CreateInput{
+		TargetMinecraftUUID: targetUUID,
+		ActorMinecraftUUID:  actorUUID,
+		ServerSlug:          body.ServerSlug,
+		World:               body.World,
+		WindowMinutes:       body.WindowMinutes,
+	})
+	if err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, out)
+}
+
+func (h *internalHandler) listRollbackItems(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil || id == uuid.Nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeRollbackGetV1HandlerIDInvalid, apperrors.MsgRollbackGetV1HandlerIDInvalid))
+		return
+	}
+	items, err := h.rollback.ListItems(r.Context(), id)
+	if err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"items": items})
+}
+
+type completeRollbackBody struct {
+	AppliedCount int `json:"appliedCount"`
+}
+
+func (h *internalHandler) completeRollback(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil || id == uuid.Nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeRollbackGetV1HandlerIDInvalid, apperrors.MsgRollbackGetV1HandlerIDInvalid))
+		return
+	}
+	var body completeRollbackBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodeRollbackCompleteV1HandlerBodyInvalid, apperrors.MsgRollbackCompleteV1HandlerBodyInvalid, err))
+		return
+	}
+	rb, err := h.rollback.Complete(r.Context(), id, body.AppliedCount)
+	if err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, rb)
 }

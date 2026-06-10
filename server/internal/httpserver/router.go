@@ -10,7 +10,9 @@ func Mount(mux *http.ServeMux, app *App) {
 	ch := newCityHandler(app.Cities)
 	clh := newClaimHandler(app.Claims)
 	ah := newAllianceHandler(app.Alliances)
-	in := newInternalHandler(app.PluginAPIKey, app.Players, app.Invites, app.Guilds, app.Trust, app.Cities, app.Claims, app.Alliances)
+	auh := newAuditHandler(app.Audit)
+	rbh := newRollbackHandler(app.Rollback)
+	in := newInternalHandler(app.PluginAPIKey, app.Players, app.Invites, app.Guilds, app.Trust, app.Cities, app.Claims, app.Alliances, app.Audit, app.Rollback)
 
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.HandleFunc("GET /ready", handleReady(app.DB))
@@ -27,6 +29,12 @@ func Mount(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("DELETE /v1/internal/claims/{id}", in.requirePluginKey(in.deleteClaim))
 	mux.HandleFunc("GET /v1/internal/claims/permission", in.requirePluginKey(in.claimPermission))
 	mux.HandleFunc("POST /v1/internal/alliances", in.requirePluginKey(in.createAlliance))
+	mux.HandleFunc("POST /v1/internal/audit/events", in.requirePluginKey(in.ingestAuditEvents))
+	mux.HandleFunc("POST /v1/internal/rollbacks", in.requirePluginKey(in.createRollback))
+	mux.HandleFunc("GET /v1/internal/rollbacks/{id}/items", in.requirePluginKey(in.listRollbackItems))
+	mux.HandleFunc("POST /v1/internal/rollbacks/{id}/complete", in.requirePluginKey(in.completeRollback))
+
+	mux.HandleFunc("GET /v1/rollbacks/{id}", rbh.getByID)
 
 	mux.HandleFunc("GET /v1/cities/slug/{slug}", ch.getBySlug)
 	mux.HandleFunc("GET /v1/cities/{id}/claims", clh.listByCity)
@@ -42,6 +50,7 @@ func Mount(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /v1/guilds", gh.list)
 
 	mux.HandleFunc("GET /v1/players/minecraft/{minecraftUuid}", ph.getByMinecraftUUID)
+	mux.HandleFunc("GET /v1/players/{id}/audit-events", auh.listByPlayer)
 	mux.HandleFunc("GET /v1/players/{id}/trust-events", th.listEvents)
 	mux.HandleFunc("GET /v1/players/{id}/sponsor-tree", th.sponsorTree)
 	mux.HandleFunc("GET /v1/players/{id}/invites", ph.listInvitees)

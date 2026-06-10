@@ -19,6 +19,8 @@ import (
 	"github.com/google/uuid"
 	alliancerepo "github.com/woragis/minecraft-campus-backend/server/internal/alliance/repository"
 	alliancesvc "github.com/woragis/minecraft-campus-backend/server/internal/alliance/service"
+	auditrepo "github.com/woragis/minecraft-campus-backend/server/internal/audit/repository"
+	auditsvc "github.com/woragis/minecraft-campus-backend/server/internal/audit/service"
 	cityrepo "github.com/woragis/minecraft-campus-backend/server/internal/city/repository"
 	citysvc "github.com/woragis/minecraft-campus-backend/server/internal/city/service"
 	claimrepo "github.com/woragis/minecraft-campus-backend/server/internal/claim/repository"
@@ -29,6 +31,8 @@ import (
 	"github.com/woragis/minecraft-campus-backend/server/internal/httpserver"
 	inviterepo "github.com/woragis/minecraft-campus-backend/server/internal/invite/repository"
 	invitesvc "github.com/woragis/minecraft-campus-backend/server/internal/invite/service"
+	rollbackrepo "github.com/woragis/minecraft-campus-backend/server/internal/rollback/repository"
+	rollbacksvc "github.com/woragis/minecraft-campus-backend/server/internal/rollback/service"
 	trustrepo "github.com/woragis/minecraft-campus-backend/server/internal/trust/repository"
 	trustsvc "github.com/woragis/minecraft-campus-backend/server/internal/trust/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/middleware"
@@ -122,6 +126,9 @@ func openTestDB(t *testing.T) (*gorm.DB, *sql.DB) {
 		&models.City{},
 		&models.Claim{},
 		&models.Alliance{},
+		&models.AuditEvent{},
+		&models.Rollback{},
+		&models.RollbackItem{},
 	); err != nil {
 		t.Fatalf("automigrate: %v", err)
 	}
@@ -153,6 +160,8 @@ func newTestHandler(db *gorm.DB) http.Handler {
 	cityRepository := cityrepo.New(db)
 	claimRepository := claimrepo.New(db)
 	allianceRepository := alliancerepo.New(db)
+	auditRepository := auditrepo.New(db)
+	rollbackRepository := rollbackrepo.New(db)
 	trustService := trustsvc.New(trustRepository, playerRepository)
 	playerService := playersvc.New(playerRepository, inviteRepository, gameServerRepository, 7, trustService)
 	inviteService := invitesvc.New(inviteRepository, playerRepository)
@@ -160,6 +169,8 @@ func newTestHandler(db *gorm.DB) http.Handler {
 	cityService := citysvc.New(cityRepository, playerRepository, guildRepository, gameServerRepository)
 	claimService := claimsvc.New(claimRepository, playerRepository, cityRepository, guildRepository, gameServerRepository)
 	allianceService := alliancesvc.New(allianceRepository, guildRepository, playerRepository)
+	auditService := auditsvc.New(auditRepository, playerRepository, gameServerRepository)
+	rollbackService := rollbacksvc.New(rollbackRepository, auditRepository, playerRepository, gameServerRepository, trustService)
 	app := &httpserver.App{
 		DB:           db,
 		PluginAPIKey: testPluginKey,
@@ -170,6 +181,8 @@ func newTestHandler(db *gorm.DB) http.Handler {
 		Cities:       cityService,
 		Claims:       claimService,
 		Alliances:    allianceService,
+		Audit:        auditService,
+		Rollback:     rollbackService,
 	}
 	return httpserver.NewHandler(app, middleware.Config{})
 }

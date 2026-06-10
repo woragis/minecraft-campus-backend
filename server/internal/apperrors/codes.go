@@ -343,3 +343,66 @@ const (
 	CodeAllianceListV1ServiceListFailed = "ALLIANCE_LIST_V1_SERVICE_LIST_FAILED"
 	MsgAllianceListV1ServiceListFailed  = "Could not list alliances."
 )
+
+// Audit
+const (
+	CodeAuditIngestV1HandlerBodyInvalid = "AUDIT_INGEST_V1_HANDLER_BODY_INVALID"
+	MsgAuditIngestV1HandlerBodyInvalid  = "Request body must include a non-empty events array."
+
+	CodeAuditIngestV1ServiceBatchTooLarge = "AUDIT_INGEST_V1_SERVICE_BATCH_TOO_LARGE"
+	MsgAuditIngestV1ServiceBatchTooLarge  = "Audit batch cannot exceed 500 events."
+
+	CodeAuditIngestV1ServiceFailed = "AUDIT_INGEST_V1_SERVICE_FAILED"
+	MsgAuditIngestV1ServiceFailed  = "Could not ingest audit events."
+
+	CodeAuditListV1HandlerIDInvalid = "AUDIT_LIST_V1_HANDLER_ID_INVALID"
+	MsgAuditListV1HandlerIDInvalid  = "Player id must be a valid UUID."
+
+	CodeAuditListV1ServicePlayerNotFound = "AUDIT_LIST_V1_SERVICE_PLAYER_NOT_FOUND"
+	MsgAuditListV1ServicePlayerNotFound  = "Player not found."
+
+	CodeAuditListV1ServiceListFailed = "AUDIT_LIST_V1_SERVICE_LIST_FAILED"
+	MsgAuditListV1ServiceListFailed  = "Could not list audit events."
+)
+
+// Rollback
+const (
+	CodeRollbackPostV1HandlerBodyInvalid = "ROLLBACK_POST_V1_HANDLER_BODY_INVALID"
+	MsgRollbackPostV1HandlerBodyInvalid  = "Request body must include targetUuid, actorUuid, serverSlug, and windowMinutes."
+
+	CodeRollbackPostV1ServiceWindowInvalid = "ROLLBACK_POST_V1_SERVICE_WINDOW_INVALID"
+	MsgRollbackPostV1ServiceWindowInvalid  = "windowMinutes must be between 1 and 1440."
+
+	CodeRollbackPostV1ServiceTargetNotFound = "ROLLBACK_POST_V1_SERVICE_TARGET_NOT_FOUND"
+	MsgRollbackPostV1ServiceTargetNotFound  = "Target player not found."
+
+	CodeRollbackPostV1ServiceActorNotFound = "ROLLBACK_POST_V1_SERVICE_ACTOR_NOT_FOUND"
+	MsgRollbackPostV1ServiceActorNotFound  = "Actor player not found."
+
+	CodeRollbackPostV1ServiceCreateFailed = "ROLLBACK_POST_V1_SERVICE_CREATE_FAILED"
+	MsgRollbackPostV1ServiceCreateFailed  = "Could not create rollback."
+
+	CodeRollbackGetV1HandlerIDInvalid = "ROLLBACK_GET_V1_HANDLER_ID_INVALID"
+	MsgRollbackGetV1HandlerIDInvalid  = "Rollback id must be a valid UUID."
+
+	CodeRollbackGetV1ServiceNotFound = "ROLLBACK_GET_V1_SERVICE_NOT_FOUND"
+	MsgRollbackGetV1ServiceNotFound  = "Rollback not found."
+
+	CodeRollbackGetV1ServiceLoadFailed = "ROLLBACK_GET_V1_SERVICE_LOAD_FAILED"
+	MsgRollbackGetV1ServiceLoadFailed  = "Could not load rollback."
+
+	CodeRollbackItemsV1ServiceNotFound = "ROLLBACK_ITEMS_V1_SERVICE_NOT_FOUND"
+	MsgRollbackItemsV1ServiceNotFound  = "Rollback not found."
+
+	CodeRollbackItemsV1ServiceListFailed = "ROLLBACK_ITEMS_V1_SERVICE_LIST_FAILED"
+	MsgRollbackItemsV1ServiceListFailed  = "Could not list rollback items."
+
+	CodeRollbackCompleteV1HandlerBodyInvalid = "ROLLBACK_COMPLETE_V1_HANDLER_BODY_INVALID"
+	MsgRollbackCompleteV1HandlerBodyInvalid  = "Request body must include appliedCount."
+
+	CodeRollbackCompleteV1ServiceNotFound = "ROLLBACK_COMPLETE_V1_SERVICE_NOT_FOUND"
+	MsgRollbackCompleteV1ServiceNotFound  = "Rollback not found."
+
+	CodeRollbackCompleteV1ServiceFailed = "ROLLBACK_COMPLETE_V1_SERVICE_FAILED"
+	MsgRollbackCompleteV1ServiceFailed  = "Could not complete rollback."
+)
