@@ -1,28 +1,83 @@
 # CampusWorld — Backend
 
-API e serviços do **CampusWorld**.
+API Go do **CampusWorld** — fonte da verdade para jogadores, convites, trust, guildas e território.
 
-## Responsabilidades
+## Arquitetura
 
-- CRUD de jogadores, guildas, cidades, claims e convites
-- Trust Engine e Sponsor Score
-- Auditoria e rollback
-- Analytics e exportação de dados
-- Autenticação plugin ↔ API
+Segue o padrão **handler → service → repository** do projeto [Lingo](../../Lokra/lingo/backend), documentado em:
 
-## Stack (planejado)
+- [`minecraft/ARCHITECTURE.md`](../../ARCHITECTURE.md) — arquitetura de referência + plano CampusWorld
+- [`faculdade/CAMPUSWORLD.md`](../CAMPUSWORLD.md) — especificação do produto
 
-- Java 21
-- Spring Boot 3
-- PostgreSQL 16
-- Flyway (migrations)
+## Stack
+
+- Go 1.22+
+- `net/http` (stdlib, Go 1.22+ routing)
+- GORM + PostgreSQL 16
+- Migrações SQL em `migrations/`
+- Docker Compose (Postgres + API)
+
+## Layout (planejado)
+
+```text
+backend/
+├── docs/
+├── migrations/
+├── server/
+│   ├── cmd/server/main.go
+│   └── internal/
+│       ├── httpserver/
+│       ├── player/
+│       ├── invite/
+│       └── ...
+├── docker-compose.yml
+└── .env.example
+```
+
+## Fase 1 — escopo
+
+- Whitelist (plugin consulta antes do login)
+- Registro/upsert de jogadores
+- Convites (`/invite` in-game → API)
+- Perfil e árvore de convites (read-only web)
 
 ## Desenvolvimento
 
 ```bash
-# Em breve: docker compose up -d && ./mvnw spring-boot:run
+cp .env.example .env
+
+# Postgres only (host port 15432)
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d postgres
+
+# API local
+cd server
+export DATABASE_URL="postgres://campus:campus@127.0.0.1:15432/campusworld?sslmode=disable"
+export PLUGIN_API_KEY="dev-plugin-key"
+go run ./cmd/server
 ```
+
+Ou stack completa:
+
+```bash
+docker compose up -d --build
+curl http://127.0.0.1:8080/health
+```
+
+## Rotas Fase 1
+
+| Método | Rota | Auth |
+|--------|------|------|
+| GET | `/health` | — |
+| GET | `/ready` | — |
+| GET | `/v1/internal/whitelist/{minecraftUuid}?username=` | `X-Plugin-Key` |
+| POST | `/v1/internal/players/upsert` | `X-Plugin-Key` |
+| POST | `/v1/internal/invites` | `X-Plugin-Key` |
+| GET | `/v1/players/{id}` | — |
+| GET | `/v1/players/minecraft/{minecraftUuid}` | — |
+| GET | `/v1/players/{id}/invites` | — |
+| GET | `/v1/invites/{code}` | — |
 
 ## Documentação
 
-Especificação do projeto: [minecraft-campus/CAMPUSWORLD.md](https://github.com/woragis/minecraft-campus/blob/main/CAMPUSWORLD.md)
+- [Arquitetura](../../ARCHITECTURE.md)
+- [CampusWorld spec](../CAMPUSWORLD.md)

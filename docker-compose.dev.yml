@@ -1,0 +1,6 @@
+# Expose Postgres to host for local `go run` without Docker API rebuild.
+
+services:
+  postgres:
+    ports:
+      - "127.0.0.1:15432:5432"

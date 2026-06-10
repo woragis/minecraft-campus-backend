@@ -1,0 +1,59 @@
+# Local stack: Postgres + API (Go).
+# Dev overlay: docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
+
+name: campusworld-backend
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-campus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-campus}
+      POSTGRES_DB: ${POSTGRES_DB:-campusworld}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    environment:
+      HTTP_ADDR: ${HTTP_ADDR:-:8080}
+      DATABASE_URL: ${DATABASE_URL:-postgres://${POSTGRES_USER:-campus}:${POSTGRES_PASSWORD:-campus}@postgres:5432/${POSTGRES_DB:-campusworld}?sslmode=disable}
+      PLUGIN_API_KEY: ${PLUGIN_API_KEY:-dev-plugin-key}
+      PROBATION_DAYS: ${PROBATION_DAYS:-7}
+      MIGRATIONS_DIR: ${MIGRATIONS_DIR:-/migrations}
+      SKIP_SQL_MIGRATIONS: ${SKIP_SQL_MIGRATIONS:-0}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
+      CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-1}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-0}
+      METRICS_ENABLED: ${METRICS_ENABLED:-0}
+    networks:
+      - internal
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
