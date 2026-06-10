@@ -205,3 +205,141 @@ const (
 	CodeTrustTreeV1ServiceLoadFailed = "TRUST_TREE_V1_SERVICE_LOAD_FAILED"
 	MsgTrustTreeV1ServiceLoadFailed  = "Could not load sponsor tree."
 )
+
+// Cities
+const (
+	CodeCityPostV1HandlerBodyInvalid = "CITY_POST_V1_HANDLER_BODY_INVALID"
+	MsgCityPostV1HandlerBodyInvalid  = "Request body must include founderUuid, name, and serverSlug."
+
+	CodeCityPostV1ServiceNameInvalid = "CITY_POST_V1_SERVICE_NAME_INVALID"
+	MsgCityPostV1ServiceNameInvalid  = "City name must be between 1 and 64 characters."
+
+	CodeCityPostV1ServiceFounderNotFound = "CITY_POST_V1_SERVICE_FOUNDER_NOT_FOUND"
+	MsgCityPostV1ServiceFounderNotFound  = "Founder player not found."
+
+	CodeCityPostV1ServiceFounderRestricted = "CITY_POST_V1_SERVICE_FOUNDER_RESTRICTED"
+	MsgCityPostV1ServiceFounderRestricted  = "Founder cannot create cities in current status."
+
+	CodeCityPostV1ServiceGuildNotFound = "CITY_POST_V1_SERVICE_GUILD_NOT_FOUND"
+	MsgCityPostV1ServiceGuildNotFound  = "Guild not found."
+
+	CodeCityPostV1ServiceCreateFailed = "CITY_POST_V1_SERVICE_CREATE_FAILED"
+	MsgCityPostV1ServiceCreateFailed  = "Could not create city."
+
+	CodeCityGetV1HandlerIDInvalid = "CITY_GET_V1_HANDLER_ID_INVALID"
+	MsgCityGetV1HandlerIDInvalid  = "City id must be a valid UUID."
+
+	CodeCityGetV1ServiceNotFound = "CITY_GET_V1_SERVICE_NOT_FOUND"
+	MsgCityGetV1ServiceNotFound  = "City not found."
+
+	CodeCityGetV1ServiceLoadFailed = "CITY_GET_V1_SERVICE_LOAD_FAILED"
+	MsgCityGetV1ServiceLoadFailed  = "Could not load city."
+
+	CodeCityListV1ServiceListFailed = "CITY_LIST_V1_SERVICE_LIST_FAILED"
+	MsgCityListV1ServiceListFailed  = "Could not list cities."
+)
+
+// Claims
+const (
+	CodeClaimPostV1HandlerBodyInvalid = "CLAIM_POST_V1_HANDLER_BODY_INVALID"
+	MsgClaimPostV1HandlerBodyInvalid  = "Request body must include ownerUuid, serverSlug, and bounds."
+
+	CodeClaimPostV1ServiceOwnerNotFound = "CLAIM_POST_V1_SERVICE_OWNER_NOT_FOUND"
+	MsgClaimPostV1ServiceOwnerNotFound  = "Owner player not found."
+
+	CodeClaimPostV1ServiceProbation = "CLAIM_POST_V1_SERVICE_PROBATION"
+	MsgClaimPostV1ServiceProbation  = "Players on probation cannot claim land."
+
+	CodeClaimPostV1ServiceBanned = "CLAIM_POST_V1_SERVICE_BANNED"
+	MsgClaimPostV1ServiceBanned  = "Banned players cannot claim land."
+
+	CodeClaimPostV1ServiceBoundsInvalid = "CLAIM_POST_V1_SERVICE_BOUNDS_INVALID"
+	MsgClaimPostV1ServiceBoundsInvalid  = "Claim bounds are invalid."
+
+	CodeClaimPostV1ServiceAreaLimit = "CLAIM_POST_V1_SERVICE_AREA_LIMIT"
+	MsgClaimPostV1ServiceAreaLimit  = "Claim would exceed territorial area limit."
+
+	CodeClaimPostV1ServiceZoneInvalid = "CLAIM_POST_V1_SERVICE_ZONE_INVALID"
+	MsgClaimPostV1ServiceZoneInvalid  = "Zone type must be urban, rural, industrial, or historic."
+
+	CodeClaimPostV1ServiceCityNotFound = "CLAIM_POST_V1_SERVICE_CITY_NOT_FOUND"
+	MsgClaimPostV1ServiceCityNotFound  = "City not found."
+
+	CodeClaimPostV1ServiceOverlap = "CLAIM_POST_V1_SERVICE_OVERLAP"
+	MsgClaimPostV1ServiceOverlap  = "Claim overlaps an existing claim."
+
+	CodeClaimPostV1ServiceCreateFailed = "CLAIM_POST_V1_SERVICE_CREATE_FAILED"
+	MsgClaimPostV1ServiceCreateFailed  = "Could not create claim."
+
+	CodeClaimDeleteV1HandlerIDInvalid = "CLAIM_DELETE_V1_HANDLER_ID_INVALID"
+	MsgClaimDeleteV1HandlerIDInvalid  = "Claim id must be a valid UUID."
+
+	CodeClaimDeleteV1ServiceNotFound = "CLAIM_DELETE_V1_SERVICE_NOT_FOUND"
+	MsgClaimDeleteV1ServiceNotFound  = "Claim not found."
+
+	CodeClaimDeleteV1ServiceOwnerNotFound = "CLAIM_DELETE_V1_SERVICE_OWNER_NOT_FOUND"
+	MsgClaimDeleteV1ServiceOwnerNotFound  = "Owner player not found."
+
+	CodeClaimDeleteV1ServiceNotOwner = "CLAIM_DELETE_V1_SERVICE_NOT_OWNER"
+	MsgClaimDeleteV1ServiceNotOwner  = "Only the claim owner can delete it."
+
+	CodeClaimDeleteV1ServiceFailed = "CLAIM_DELETE_V1_SERVICE_FAILED"
+	MsgClaimDeleteV1ServiceFailed  = "Could not delete claim."
+
+	CodeClaimGetV1HandlerIDInvalid = "CLAIM_GET_V1_HANDLER_ID_INVALID"
+	MsgClaimGetV1HandlerIDInvalid  = "Claim id must be a valid UUID."
+
+	CodeClaimGetV1ServiceNotFound = "CLAIM_GET_V1_SERVICE_NOT_FOUND"
+	MsgClaimGetV1ServiceNotFound  = "Claim not found."
+
+	CodeClaimGetV1ServiceLoadFailed = "CLAIM_GET_V1_SERVICE_LOAD_FAILED"
+	MsgClaimGetV1ServiceLoadFailed  = "Could not load claim."
+
+	CodeClaimListCityV1HandlerIDInvalid = "CLAIM_LIST_CITY_V1_HANDLER_ID_INVALID"
+	MsgClaimListCityV1HandlerIDInvalid  = "City id must be a valid UUID."
+
+	CodeClaimListCityV1ServiceCityNotFound = "CLAIM_LIST_CITY_V1_SERVICE_CITY_NOT_FOUND"
+	MsgClaimListCityV1ServiceCityNotFound  = "City not found."
+
+	CodeClaimListCityV1ServiceListFailed = "CLAIM_LIST_CITY_V1_SERVICE_LIST_FAILED"
+	MsgClaimListCityV1ServiceListFailed  = "Could not list city claims."
+
+	CodeClaimPermV1HandlerParamsInvalid = "CLAIM_PERM_V1_HANDLER_PARAMS_INVALID"
+	MsgClaimPermV1HandlerParamsInvalid  = "minecraftUuid, serverSlug, world, x, and z are required."
+
+	CodeClaimPermV1ServiceFailed = "CLAIM_PERM_V1_SERVICE_FAILED"
+	MsgClaimPermV1ServiceFailed  = "Could not check claim permission."
+)
+
+// Alliances
+const (
+	CodeAlliancePostV1HandlerBodyInvalid = "ALLIANCE_POST_V1_HANDLER_BODY_INVALID"
+	MsgAlliancePostV1HandlerBodyInvalid  = "Request body must include leaderUuid, guildAId, and guildBId."
+
+	CodeAlliancePostV1ServiceSameGuild = "ALLIANCE_POST_V1_SERVICE_SAME_GUILD"
+	MsgAlliancePostV1ServiceSameGuild  = "Cannot ally a guild with itself."
+
+	CodeAlliancePostV1ServiceLeaderNotFound = "ALLIANCE_POST_V1_SERVICE_LEADER_NOT_FOUND"
+	MsgAlliancePostV1ServiceLeaderNotFound  = "Leader player not found."
+
+	CodeAlliancePostV1ServiceGuildNotFound = "ALLIANCE_POST_V1_SERVICE_GUILD_NOT_FOUND"
+	MsgAlliancePostV1ServiceGuildNotFound  = "Guild not found."
+
+	CodeAlliancePostV1ServiceNotLeader = "ALLIANCE_POST_V1_SERVICE_NOT_LEADER"
+	MsgAlliancePostV1ServiceNotLeader  = "Only guild A leader can propose alliance."
+
+	CodeAlliancePostV1ServiceExists = "ALLIANCE_POST_V1_SERVICE_EXISTS"
+	MsgAlliancePostV1ServiceExists  = "Alliance already exists between these guilds."
+
+	CodeAlliancePostV1ServiceCreateFailed = "ALLIANCE_POST_V1_SERVICE_CREATE_FAILED"
+	MsgAlliancePostV1ServiceCreateFailed  = "Could not create alliance."
+
+	CodeAllianceListV1HandlerIDInvalid = "ALLIANCE_LIST_V1_HANDLER_ID_INVALID"
+	MsgAllianceListV1HandlerIDInvalid  = "Guild id must be a valid UUID."
+
+	CodeAllianceListV1ServiceGuildNotFound = "ALLIANCE_LIST_V1_SERVICE_GUILD_NOT_FOUND"
+	MsgAllianceListV1ServiceGuildNotFound  = "Guild not found."
+
+	CodeAllianceListV1ServiceListFailed = "ALLIANCE_LIST_V1_SERVICE_LIST_FAILED"
+	MsgAllianceListV1ServiceListFailed  = "Could not list alliances."
+)

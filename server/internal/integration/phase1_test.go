@@ -17,6 +17,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	alliancerepo "github.com/woragis/minecraft-campus-backend/server/internal/alliance/repository"
+	alliancesvc "github.com/woragis/minecraft-campus-backend/server/internal/alliance/service"
+	cityrepo "github.com/woragis/minecraft-campus-backend/server/internal/city/repository"
+	citysvc "github.com/woragis/minecraft-campus-backend/server/internal/city/service"
+	claimrepo "github.com/woragis/minecraft-campus-backend/server/internal/claim/repository"
+	claimsvc "github.com/woragis/minecraft-campus-backend/server/internal/claim/service"
 	gameserverrepo "github.com/woragis/minecraft-campus-backend/server/internal/gameserver/repository"
 	guildrepo "github.com/woragis/minecraft-campus-backend/server/internal/guild/repository"
 	guildsvc "github.com/woragis/minecraft-campus-backend/server/internal/guild/service"
@@ -113,6 +119,9 @@ func openTestDB(t *testing.T) (*gorm.DB, *sql.DB) {
 		&models.Guild{},
 		&models.GuildMember{},
 		&models.TrustEvent{},
+		&models.City{},
+		&models.Claim{},
+		&models.Alliance{},
 	); err != nil {
 		t.Fatalf("automigrate: %v", err)
 	}
@@ -141,10 +150,16 @@ func newTestHandler(db *gorm.DB) http.Handler {
 	gameServerRepository := gameserverrepo.New(db)
 	guildRepository := guildrepo.New(db)
 	trustRepository := trustrepo.New(db)
+	cityRepository := cityrepo.New(db)
+	claimRepository := claimrepo.New(db)
+	allianceRepository := alliancerepo.New(db)
 	trustService := trustsvc.New(trustRepository, playerRepository)
 	playerService := playersvc.New(playerRepository, inviteRepository, gameServerRepository, 7, trustService)
 	inviteService := invitesvc.New(inviteRepository, playerRepository)
 	guildService := guildsvc.New(guildRepository, playerRepository)
+	cityService := citysvc.New(cityRepository, playerRepository, guildRepository, gameServerRepository)
+	claimService := claimsvc.New(claimRepository, playerRepository, cityRepository, guildRepository, gameServerRepository)
+	allianceService := alliancesvc.New(allianceRepository, guildRepository, playerRepository)
 	app := &httpserver.App{
 		DB:           db,
 		PluginAPIKey: testPluginKey,
@@ -152,6 +167,9 @@ func newTestHandler(db *gorm.DB) http.Handler {
 		Invites:      inviteService,
 		Guilds:       guildService,
 		Trust:        trustService,
+		Cities:       cityService,
+		Claims:       claimService,
+		Alliances:    allianceService,
 	}
 	return httpserver.NewHandler(app, middleware.Config{})
 }

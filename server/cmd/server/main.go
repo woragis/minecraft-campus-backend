@@ -11,7 +11,13 @@ import (
 	"syscall"
 	"time"
 
+	alliancerepo "github.com/woragis/minecraft-campus-backend/server/internal/alliance/repository"
+	alliancesvc "github.com/woragis/minecraft-campus-backend/server/internal/alliance/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/bootstrap"
+	cityrepo "github.com/woragis/minecraft-campus-backend/server/internal/city/repository"
+	citysvc "github.com/woragis/minecraft-campus-backend/server/internal/city/service"
+	claimrepo "github.com/woragis/minecraft-campus-backend/server/internal/claim/repository"
+	claimsvc "github.com/woragis/minecraft-campus-backend/server/internal/claim/service"
 	gameserverrepo "github.com/woragis/minecraft-campus-backend/server/internal/gameserver/repository"
 	guildrepo "github.com/woragis/minecraft-campus-backend/server/internal/guild/repository"
 	guildsvc "github.com/woragis/minecraft-campus-backend/server/internal/guild/service"
@@ -75,6 +81,9 @@ func main() {
 		&models.Guild{},
 		&models.GuildMember{},
 		&models.TrustEvent{},
+		&models.City{},
+		&models.Claim{},
+		&models.Alliance{},
 	); err != nil {
 		log.Fatalf("automigrate: %v", err)
 	}
@@ -84,6 +93,9 @@ func main() {
 	gameServerRepository := gameserverrepo.New(db)
 	guildRepository := guildrepo.New(db)
 	trustRepository := trustrepo.New(db)
+	cityRepository := cityrepo.New(db)
+	claimRepository := claimrepo.New(db)
+	allianceRepository := alliancerepo.New(db)
 
 	if cfg, ok := bootstrap.ParseFounderFromEnv(); ok {
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
@@ -101,6 +113,9 @@ func main() {
 	playerService := playersvc.New(playerRepository, inviteRepository, gameServerRepository, probationDays, trustService)
 	inviteService := invitesvc.New(inviteRepository, playerRepository)
 	guildService := guildsvc.New(guildRepository, playerRepository)
+	cityService := citysvc.New(cityRepository, playerRepository, guildRepository, gameServerRepository)
+	claimService := claimsvc.New(claimRepository, playerRepository, cityRepository, guildRepository, gameServerRepository)
+	allianceService := alliancesvc.New(allianceRepository, guildRepository, playerRepository)
 
 	app := &httpserver.App{
 		DB:           db,
@@ -109,6 +124,9 @@ func main() {
 		Invites:      inviteService,
 		Guilds:       guildService,
 		Trust:        trustService,
+		Cities:       cityService,
+		Claims:       claimService,
+		Alliances:    allianceService,
 	}
 
 	handler := httpserver.NewHandler(app, middleware.LoadConfigFromEnv())

@@ -7,7 +7,10 @@ func Mount(mux *http.ServeMux, app *App) {
 	ih := newInviteHandler(app.Invites, app.Players)
 	gh := newGuildHandler(app.Guilds)
 	th := newTrustHandler(app.Trust)
-	in := newInternalHandler(app.PluginAPIKey, app.Players, app.Invites, app.Guilds, app.Trust)
+	ch := newCityHandler(app.Cities)
+	clh := newClaimHandler(app.Claims)
+	ah := newAllianceHandler(app.Alliances)
+	in := newInternalHandler(app.PluginAPIKey, app.Players, app.Invites, app.Guilds, app.Trust, app.Cities, app.Claims, app.Alliances)
 
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.HandleFunc("GET /ready", handleReady(app.DB))
@@ -19,7 +22,20 @@ func Mount(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /v1/internal/guilds/{id}/join", in.requirePluginKey(in.joinGuild))
 	mux.HandleFunc("POST /v1/internal/guilds/{id}/leave", in.requirePluginKey(in.leaveGuild))
 	mux.HandleFunc("POST /v1/internal/trust/events", in.requirePluginKey(in.recordTrustEvent))
+	mux.HandleFunc("POST /v1/internal/cities", in.requirePluginKey(in.createCity))
+	mux.HandleFunc("POST /v1/internal/claims", in.requirePluginKey(in.createClaim))
+	mux.HandleFunc("DELETE /v1/internal/claims/{id}", in.requirePluginKey(in.deleteClaim))
+	mux.HandleFunc("GET /v1/internal/claims/permission", in.requirePluginKey(in.claimPermission))
+	mux.HandleFunc("POST /v1/internal/alliances", in.requirePluginKey(in.createAlliance))
 
+	mux.HandleFunc("GET /v1/cities/slug/{slug}", ch.getBySlug)
+	mux.HandleFunc("GET /v1/cities/{id}/claims", clh.listByCity)
+	mux.HandleFunc("GET /v1/cities/{id}", ch.getByID)
+	mux.HandleFunc("GET /v1/cities", ch.list)
+
+	mux.HandleFunc("GET /v1/claims/{id}", clh.getByID)
+
+	mux.HandleFunc("GET /v1/guilds/{id}/alliances", ah.listByGuild)
 	mux.HandleFunc("GET /v1/guilds/slug/{slug}", gh.getBySlug)
 	mux.HandleFunc("GET /v1/guilds/{id}/members", gh.listMembers)
 	mux.HandleFunc("GET /v1/guilds/{id}", gh.getByID)

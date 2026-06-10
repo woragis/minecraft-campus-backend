@@ -3,10 +3,14 @@ package httpserver
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/woragis/minecraft-campus-backend/server/internal/apperrors"
+	alliancesvc "github.com/woragis/minecraft-campus-backend/server/internal/alliance/service"
+	citysvc "github.com/woragis/minecraft-campus-backend/server/internal/city/service"
+	claimsvc "github.com/woragis/minecraft-campus-backend/server/internal/claim/service"
 	guildsvc "github.com/woragis/minecraft-campus-backend/server/internal/guild/service"
 	invitesvc "github.com/woragis/minecraft-campus-backend/server/internal/invite/service"
 	playersvc "github.com/woragis/minecraft-campus-backend/server/internal/player/service"
@@ -19,15 +23,30 @@ type internalHandler struct {
 	invites      *invitesvc.Service
 	guilds       *guildsvc.Service
 	trust        *trustsvc.Service
+	cities       *citysvc.Service
+	claims       *claimsvc.Service
+	alliances    *alliancesvc.Service
 }
 
-func newInternalHandler(pluginAPIKey string, players *playersvc.Service, invites *invitesvc.Service, guilds *guildsvc.Service, trust *trustsvc.Service) *internalHandler {
+func newInternalHandler(
+	pluginAPIKey string,
+	players *playersvc.Service,
+	invites *invitesvc.Service,
+	guilds *guildsvc.Service,
+	trust *trustsvc.Service,
+	cities *citysvc.Service,
+	claims *claimsvc.Service,
+	alliances *alliancesvc.Service,
+) *internalHandler {
 	return &internalHandler{
 		pluginAPIKey: pluginAPIKey,
 		players:      players,
 		invites:      invites,
 		guilds:       guilds,
 		trust:        trust,
+		cities:       cities,
+		claims:       claims,
+		alliances:    alliances,
 	}
 }
 
@@ -205,4 +224,205 @@ func (h *internalHandler) recordTrustEvent(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]any{"event": event, "player": player})
+}
+
+type createCityBody struct {
+	FounderUUID string  `json:"founderUuid"`
+	Name        string  `json:"name"`
+	ServerSlug  string  `json:"serverSlug"`
+	World       string  `json:"world"`
+	CenterX     int     `json:"centerX"`
+	CenterZ     int     `json:"centerZ"`
+	GuildID     *string `json:"guildId"`
+}
+
+func (h *internalHandler) createCity(w http.ResponseWriter, r *http.Request) {
+	var body createCityBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodeCityPostV1HandlerBodyInvalid, apperrors.MsgCityPostV1HandlerBodyInvalid, err))
+		return
+	}
+	founderUUID, err := uuid.Parse(strings.TrimSpace(body.FounderUUID))
+	if err != nil || founderUUID == uuid.Nil || strings.TrimSpace(body.Name) == "" || strings.TrimSpace(body.ServerSlug) == "" {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeCityPostV1HandlerBodyInvalid, apperrors.MsgCityPostV1HandlerBodyInvalid))
+		return
+	}
+	var guildID *uuid.UUID
+	if body.GuildID != nil && strings.TrimSpace(*body.GuildID) != "" {
+		parsed, err := uuid.Parse(strings.TrimSpace(*body.GuildID))
+		if err != nil || parsed == uuid.Nil {
+			apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeCityPostV1HandlerBodyInvalid, apperrors.MsgCityPostV1HandlerBodyInvalid))
+			return
+		}
+		guildID = &parsed
+	}
+	city, err := h.cities.Create(r.Context(), citysvc.CreateInput{
+		FounderMinecraftUUID: founderUUID,
+		Name:                 body.Name,
+		ServerSlug:           body.ServerSlug,
+		World:                body.World,
+		CenterX:              body.CenterX,
+		CenterZ:              body.CenterZ,
+		GuildID:              guildID,
+	})
+	if err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, city)
+}
+
+type createClaimBody struct {
+	OwnerUUID  string  `json:"ownerUuid"`
+	ServerSlug string  `json:"serverSlug"`
+	World      string  `json:"world"`
+	MinX       int     `json:"minX"`
+	MaxX       int     `json:"maxX"`
+	MinZ       int     `json:"minZ"`
+	MaxZ       int     `json:"maxZ"`
+	MinY       int     `json:"minY"`
+	MaxY       int     `json:"maxY"`
+	ZoneType   string  `json:"zoneType"`
+	CityID     *string `json:"cityId"`
+}
+
+func (h *internalHandler) createClaim(w http.ResponseWriter, r *http.Request) {
+	var body createClaimBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodeClaimPostV1HandlerBodyInvalid, apperrors.MsgClaimPostV1HandlerBodyInvalid, err))
+		return
+	}
+	ownerUUID, err := uuid.Parse(strings.TrimSpace(body.OwnerUUID))
+	if err != nil || ownerUUID == uuid.Nil || strings.TrimSpace(body.ServerSlug) == "" {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeClaimPostV1HandlerBodyInvalid, apperrors.MsgClaimPostV1HandlerBodyInvalid))
+		return
+	}
+	var cityID *uuid.UUID
+	if body.CityID != nil && strings.TrimSpace(*body.CityID) != "" {
+		parsed, err := uuid.Parse(strings.TrimSpace(*body.CityID))
+		if err != nil || parsed == uuid.Nil {
+			apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeClaimPostV1HandlerBodyInvalid, apperrors.MsgClaimPostV1HandlerBodyInvalid))
+			return
+		}
+		cityID = &parsed
+	}
+	claim, err := h.claims.Create(r.Context(), claimsvc.CreateInput{
+		OwnerMinecraftUUID: ownerUUID,
+		ServerSlug:         body.ServerSlug,
+		World:              body.World,
+		MinX:               body.MinX,
+		MaxX:               body.MaxX,
+		MinZ:               body.MinZ,
+		MaxZ:               body.MaxZ,
+		MinY:               body.MinY,
+		MaxY:               body.MaxY,
+		ZoneType:           body.ZoneType,
+		CityID:             cityID,
+	})
+	if err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, claim)
+}
+
+type deleteClaimBody struct {
+	OwnerUUID string `json:"ownerUuid"`
+}
+
+func (h *internalHandler) deleteClaim(w http.ResponseWriter, r *http.Request) {
+	claimID, err := uuid.Parse(r.PathValue("id"))
+	if err != nil || claimID == uuid.Nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeClaimDeleteV1HandlerIDInvalid, apperrors.MsgClaimDeleteV1HandlerIDInvalid))
+		return
+	}
+	var body deleteClaimBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodeClaimPostV1HandlerBodyInvalid, apperrors.MsgClaimPostV1HandlerBodyInvalid, err))
+		return
+	}
+	ownerUUID, err := uuid.Parse(strings.TrimSpace(body.OwnerUUID))
+	if err != nil || ownerUUID == uuid.Nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeClaimPostV1HandlerBodyInvalid, apperrors.MsgClaimPostV1HandlerBodyInvalid))
+		return
+	}
+	if err := h.claims.Delete(r.Context(), claimID, ownerUUID); err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "deleted"})
+}
+
+func (h *internalHandler) claimPermission(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	mcUUID, err := uuid.Parse(strings.TrimSpace(q.Get("minecraftUuid")))
+	if err != nil || mcUUID == uuid.Nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeClaimPermV1HandlerParamsInvalid, apperrors.MsgClaimPermV1HandlerParamsInvalid))
+		return
+	}
+	serverSlug := strings.TrimSpace(q.Get("serverSlug"))
+	world := strings.TrimSpace(q.Get("world"))
+	if serverSlug == "" || world == "" {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeClaimPermV1HandlerParamsInvalid, apperrors.MsgClaimPermV1HandlerParamsInvalid))
+		return
+	}
+	x, err := strconv.Atoi(strings.TrimSpace(q.Get("x")))
+	if err != nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeClaimPermV1HandlerParamsInvalid, apperrors.MsgClaimPermV1HandlerParamsInvalid))
+		return
+	}
+	z, err := strconv.Atoi(strings.TrimSpace(q.Get("z")))
+	if err != nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeClaimPermV1HandlerParamsInvalid, apperrors.MsgClaimPermV1HandlerParamsInvalid))
+		return
+	}
+	out, err := h.claims.CheckPermission(r.Context(), mcUUID, serverSlug, world, x, z)
+	if err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
+type createAllianceBody struct {
+	LeaderUUID string `json:"leaderUuid"`
+	GuildAID   string `json:"guildAId"`
+	GuildBID   string `json:"guildBId"`
+}
+
+func (h *internalHandler) createAlliance(w http.ResponseWriter, r *http.Request) {
+	var body createAllianceBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodeAlliancePostV1HandlerBodyInvalid, apperrors.MsgAlliancePostV1HandlerBodyInvalid, err))
+		return
+	}
+	leaderUUID, err := uuid.Parse(strings.TrimSpace(body.LeaderUUID))
+	if err != nil || leaderUUID == uuid.Nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeAlliancePostV1HandlerBodyInvalid, apperrors.MsgAlliancePostV1HandlerBodyInvalid))
+		return
+	}
+	guildAID, err := uuid.Parse(strings.TrimSpace(body.GuildAID))
+	if err != nil || guildAID == uuid.Nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeAlliancePostV1HandlerBodyInvalid, apperrors.MsgAlliancePostV1HandlerBodyInvalid))
+		return
+	}
+	guildBID, err := uuid.Parse(strings.TrimSpace(body.GuildBID))
+	if err != nil || guildBID == uuid.Nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeAlliancePostV1HandlerBodyInvalid, apperrors.MsgAlliancePostV1HandlerBodyInvalid))
+		return
+	}
+	alliance, err := h.alliances.Create(r.Context(), leaderUUID, guildAID, guildBID)
+	if err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, alliance)
 }

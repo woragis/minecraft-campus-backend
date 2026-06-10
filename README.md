@@ -51,6 +51,14 @@ backend/
 - Perfil enriquecido com guilda
 - Grafo de moderação (`/v1/players/{id}/sponsor-tree`)
 
+## Fase 3 — território
+
+- Cidades (vinculáveis a guildas)
+- Claims com proteção de blocos (plugin consulta API)
+- Alianças entre guildas
+- Progressão territorial por tempo de conta + trust score
+- Zonas: `urban`, `rural`, `industrial`, `historic`
+
 ## Desenvolvimento
 
 ```bash
@@ -96,6 +104,17 @@ curl http://127.0.0.1:8080/health
 | POST | `/v1/internal/guilds/{id}/join` | `X-Plugin-Key` |
 | POST | `/v1/internal/guilds/{id}/leave` | `X-Plugin-Key` |
 | POST | `/v1/internal/trust/events` | `X-Plugin-Key` |
+| GET | `/v1/cities` | — |
+| GET | `/v1/cities/{id}` | — |
+| GET | `/v1/cities/slug/{slug}` | — |
+| GET | `/v1/cities/{id}/claims` | — |
+| GET | `/v1/claims/{id}` | — |
+| GET | `/v1/guilds/{id}/alliances` | — |
+| POST | `/v1/internal/cities` | `X-Plugin-Key` |
+| POST | `/v1/internal/claims` | `X-Plugin-Key` |
+| DELETE | `/v1/internal/claims/{id}` | `X-Plugin-Key` |
+| GET | `/v1/internal/claims/permission` | `X-Plugin-Key` |
+| POST | `/v1/internal/alliances` | `X-Plugin-Key` |
 
 ## Bootstrap do fundador
 
