@@ -13,9 +13,12 @@ import (
 
 	alliancerepo "github.com/woragis/minecraft-campus-backend/server/internal/alliance/repository"
 	alliancesvc "github.com/woragis/minecraft-campus-backend/server/internal/alliance/service"
+	alertsrepo "github.com/woragis/minecraft-campus-backend/server/internal/alerts/repository"
+	alertssvc "github.com/woragis/minecraft-campus-backend/server/internal/alerts/service"
 	auditrepo "github.com/woragis/minecraft-campus-backend/server/internal/audit/repository"
 	auditsvc "github.com/woragis/minecraft-campus-backend/server/internal/audit/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/bootstrap"
+	"github.com/woragis/minecraft-campus-backend/server/internal/config"
 	cityrepo "github.com/woragis/minecraft-campus-backend/server/internal/city/repository"
 	citysvc "github.com/woragis/minecraft-campus-backend/server/internal/city/service"
 	claimrepo "github.com/woragis/minecraft-campus-backend/server/internal/claim/repository"
@@ -24,6 +27,7 @@ import (
 	guildrepo "github.com/woragis/minecraft-campus-backend/server/internal/guild/repository"
 	guildsvc "github.com/woragis/minecraft-campus-backend/server/internal/guild/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/httpserver"
+	metricssvc "github.com/woragis/minecraft-campus-backend/server/internal/metrics/service"
 	inviterepo "github.com/woragis/minecraft-campus-backend/server/internal/invite/repository"
 	invitesvc "github.com/woragis/minecraft-campus-backend/server/internal/invite/service"
 	rollbackrepo "github.com/woragis/minecraft-campus-backend/server/internal/rollback/repository"
@@ -39,6 +43,9 @@ import (
 )
 
 func main() {
+	appCfg := config.Load()
+	log.Printf("campusworld profile=%s backup=%v worker_hint=%v", appCfg.Profile, appCfg.BackupActive(), appCfg.WorkerEnabled)
+
 	addr := envOr("HTTP_ADDR", ":8080")
 	dsn := strings.TrimSpace(os.Getenv("DATABASE_URL"))
 	if dsn == "" {
@@ -91,6 +98,8 @@ func main() {
 		&models.AuditEvent{},
 		&models.Rollback{},
 		&models.RollbackItem{},
+		&models.WorldSnapshot{},
+		&models.Alert{},
 	); err != nil {
 		log.Fatalf("automigrate: %v", err)
 	}
@@ -125,12 +134,15 @@ func main() {
 	cityService := citysvc.New(cityRepository, playerRepository, guildRepository, gameServerRepository)
 	claimService := claimsvc.New(claimRepository, playerRepository, cityRepository, guildRepository, gameServerRepository)
 	allianceService := alliancesvc.New(allianceRepository, guildRepository, playerRepository)
-	auditService := auditsvc.New(auditRepository, playerRepository, gameServerRepository)
+	auditService := auditsvc.New(appCfg, auditRepository, playerRepository, gameServerRepository)
 	rollbackService := rollbacksvc.New(rollbackRepository, auditRepository, playerRepository, gameServerRepository, trustService)
+	metricsService := metricssvc.New(db)
+	alertsService := alertssvc.New(appCfg, alertsrepo.New(db))
 
 	app := &httpserver.App{
 		DB:           db,
 		PluginAPIKey: pluginAPIKey,
+		Config:       appCfg,
 		Players:      playerService,
 		Invites:      inviteService,
 		Guilds:       guildService,
@@ -140,6 +152,8 @@ func main() {
 		Alliances:    allianceService,
 		Audit:        auditService,
 		Rollback:     rollbackService,
+		Metrics:      metricsService,
+		Alerts:       alertsService,
 	}
 
 	handler := httpserver.NewHandler(app, middleware.LoadConfigFromEnv())

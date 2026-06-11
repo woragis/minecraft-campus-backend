@@ -406,3 +406,27 @@ const (
 	CodeRollbackCompleteV1ServiceFailed = "ROLLBACK_COMPLETE_V1_SERVICE_FAILED"
 	MsgRollbackCompleteV1ServiceFailed  = "Could not complete rollback."
 )
+
+// Metrics
+const (
+	CodeMetricsOverviewV1ServiceFailed = "METRICS_OVERVIEW_V1_SERVICE_FAILED"
+	MsgMetricsOverviewV1ServiceFailed  = "Could not load metrics overview."
+
+	CodeMetricsTerritoryV1ServiceFailed = "METRICS_TERRITORY_V1_SERVICE_FAILED"
+	MsgMetricsTerritoryV1ServiceFailed  = "Could not load territory metrics."
+)
+
+// Alerts
+const (
+	CodeAlertsListV1ServiceFailed = "ALERTS_LIST_V1_SERVICE_FAILED"
+	MsgAlertsListV1ServiceFailed  = "Could not list alerts."
+
+	CodeAlertsAckV1HandlerIDInvalid = "ALERTS_ACK_V1_HANDLER_ID_INVALID"
+	MsgAlertsAckV1HandlerIDInvalid  = "Alert id must be a valid UUID."
+
+	CodeAlertsAckV1ServiceNotFound = "ALERTS_ACK_V1_SERVICE_NOT_FOUND"
+	MsgAlertsAckV1ServiceNotFound  = "Alert not found."
+
+	CodeAlertsAckV1ServiceFailed = "ALERTS_ACK_V1_SERVICE_FAILED"
+	MsgAlertsAckV1ServiceFailed  = "Could not acknowledge alert."
+)

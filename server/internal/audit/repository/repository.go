@@ -58,6 +58,14 @@ func (r *Repository) ListByPlayer(ctx context.Context, f ListFilter) ([]models.A
 	return events, nil
 }
 
+func (r *Repository) PurgeBefore(ctx context.Context, before time.Time) (int64, error) {
+	res := r.db.WithContext(ctx).Where("occurred_at < ?", before).Delete(&models.AuditEvent{})
+	if res.Error != nil {
+		return 0, fmt.Errorf("audit purge: %w", res.Error)
+	}
+	return res.RowsAffected, nil
+}
+
 func (r *Repository) ListForRollback(ctx context.Context, playerID, serverID uuid.UUID, world string, from, to time.Time) ([]models.AuditEvent, error) {
 	var events []models.AuditEvent
 	err := r.db.WithContext(ctx).

@@ -12,6 +12,8 @@ func Mount(mux *http.ServeMux, app *App) {
 	ah := newAllianceHandler(app.Alliances)
 	auh := newAuditHandler(app.Audit)
 	rbh := newRollbackHandler(app.Rollback)
+	mh := newMetricsHandler(app.Metrics)
+	alh := newAlertsHandler(app.Alerts)
 	in := newInternalHandler(app.PluginAPIKey, app.Players, app.Invites, app.Guilds, app.Trust, app.Cities, app.Claims, app.Alliances, app.Audit, app.Rollback)
 
 	mux.HandleFunc("GET /health", handleHealth)
@@ -35,6 +37,11 @@ func Mount(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /v1/internal/rollbacks/{id}/complete", in.requirePluginKey(in.completeRollback))
 
 	mux.HandleFunc("GET /v1/rollbacks/{id}", rbh.getByID)
+
+	mux.HandleFunc("GET /v1/metrics/overview", mh.overview)
+	mux.HandleFunc("GET /v1/metrics/territory", mh.territory)
+	mux.HandleFunc("GET /v1/alerts", alh.list)
+	mux.HandleFunc("POST /v1/alerts/{id}/acknowledge", alh.acknowledge)
 
 	mux.HandleFunc("GET /v1/cities/slug/{slug}", ch.getBySlug)
 	mux.HandleFunc("GET /v1/cities/{id}/claims", clh.listByCity)

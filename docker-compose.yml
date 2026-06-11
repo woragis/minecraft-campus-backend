@@ -9,6 +9,7 @@ networks:
 
 volumes:
   postgres_data:
+  backup_data:
 
 services:
   postgres:
@@ -46,6 +47,9 @@ services:
       CORS_ALLOW_CREDENTIALS: ${CORS_ALLOW_CREDENTIALS:-1}
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-0}
       METRICS_ENABLED: ${METRICS_ENABLED:-0}
+      CAMPUSWORLD_PROFILE: ${CAMPUSWORLD_PROFILE:-budget}
+      AUDIT_INGEST_ENABLED: ${AUDIT_INGEST_ENABLED:-1}
+      AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-30}
     networks:
       - internal
     ports:
@@ -59,3 +63,39 @@ services:
       timeout: 3s
       retries: 5
       start_period: 10s
+
+  worker:
+    build:
+      context: .
+      dockerfile: server/Dockerfile.worker
+    restart: unless-stopped
+    profiles:
+      - worker
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgres://${POSTGRES_USER:-campus}:${POSTGRES_PASSWORD:-campus}@postgres:5432/${POSTGRES_DB:-campusworld}?sslmode=disable}
+      MIGRATIONS_DIR: ${MIGRATIONS_DIR:-/migrations}
+      SKIP_SQL_MIGRATIONS: ${SKIP_SQL_MIGRATIONS:-0}
+      CAMPUSWORLD_PROFILE: ${CAMPUSWORLD_PROFILE:-budget}
+      WORKER_ENABLED: ${WORKER_ENABLED:-0}
+      BACKUP_ENABLED: ${BACKUP_ENABLED:-0}
+      BACKUP_DATABASE_ENABLED: ${BACKUP_DATABASE_ENABLED:-0}
+      BACKUP_WORLD_ENABLED: ${BACKUP_WORLD_ENABLED:-0}
+      BACKUP_STORAGE: ${BACKUP_STORAGE:-none}
+      BACKUP_LOCAL_PATH: ${BACKUP_LOCAL_PATH:-/var/backups/campusworld}
+      BACKUP_DATABASE_RETENTION_DAYS: ${BACKUP_DATABASE_RETENTION_DAYS:-7}
+      BACKUP_DAILY_ENABLED: ${BACKUP_DAILY_ENABLED:-0}
+      METRICS_REFRESH_ENABLED: ${METRICS_REFRESH_ENABLED:-0}
+      ALERTS_ENABLED: ${ALERTS_ENABLED:-0}
+      ALERTS_INTERVAL_MINUTES: ${ALERTS_INTERVAL_MINUTES:-15}
+      ALERTS_GRIEFING_THRESHOLD_HOUR: ${ALERTS_GRIEFING_THRESHOLD_HOUR:-150}
+      ALERTS_DISCORD_WEBHOOK: ${ALERTS_DISCORD_WEBHOOK:-}
+      AUDIT_PURGE_ENABLED: ${AUDIT_PURGE_ENABLED:-1}
+      AUDIT_RETENTION_DAYS: ${AUDIT_RETENTION_DAYS:-30}
+      AUDIT_PURGE_INTERVAL_HOURS: ${AUDIT_PURGE_INTERVAL_HOURS:-24}
+    volumes:
+      - backup_data:/var/backups/campusworld
+    networks:
+      - internal
+    depends_on:
+      postgres:
+        condition: service_healthy

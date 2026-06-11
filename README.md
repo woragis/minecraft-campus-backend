@@ -67,6 +67,24 @@ backend/
 - Itens de rollback: `restore` (desfaz break) / `remove` (desfaz place)
 - Trust penalty `rollback_applied` (-5) no alvo
 
+## Fase 5 — operações e visibilidade
+
+- Profiles: `dev` | `budget` (default) | `production` — ver [BUDGET-DEPLOY](../docs/BUDGET-DEPLOY.md)
+- Worker (`cmd/worker`) — backups, alertas, purge de audit (opt-in via `WORKER_ENABLED`)
+- Backup Postgres local (`BACKUP_STORAGE=local`) — sem AWS obrigatório
+- `GET /v1/metrics/overview`, `/v1/metrics/territory`
+- `GET /v1/alerts`, `POST /v1/alerts/{id}/acknowledge`
+- Alertas de griefing (threshold configurável)
+
+```bash
+# Stack barata (sem worker)
+docker compose up -d
+
+# Com worker + backup local
+WORKER_ENABLED=1 BACKUP_ENABLED=1 BACKUP_STORAGE=local \
+  docker compose --profile worker up -d
+```
+
 ## Desenvolvimento
 
 ```bash
@@ -129,6 +147,10 @@ curl http://127.0.0.1:8080/health
 | POST | `/v1/internal/rollbacks` | `X-Plugin-Key` |
 | GET | `/v1/internal/rollbacks/{id}/items` | `X-Plugin-Key` |
 | POST | `/v1/internal/rollbacks/{id}/complete` | `X-Plugin-Key` |
+| GET | `/v1/metrics/overview` | — |
+| GET | `/v1/metrics/territory` | — |
+| GET | `/v1/alerts` | — |
+| POST | `/v1/alerts/{id}/acknowledge` | — |
 
 ## Bootstrap do fundador
 

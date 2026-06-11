@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"errors"
+	"log"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/woragis/minecraft-campus-backend/server/internal/apperrors"
+	"github.com/woragis/minecraft-campus-backend/server/internal/config"
 	auditrepo "github.com/woragis/minecraft-campus-backend/server/internal/audit/repository"
 	gameserverrepo "github.com/woragis/minecraft-campus-backend/server/internal/gameserver/repository"
 	"github.com/woragis/minecraft-campus-backend/server/internal/models"
@@ -16,13 +18,14 @@ import (
 )
 
 type Service struct {
+	cfg        config.Config
 	repo       *auditrepo.Repository
 	playerRepo *playerrepo.Repository
 	serverRepo *gameserverrepo.Repository
 }
 
-func New(repo *auditrepo.Repository, playerRepo *playerrepo.Repository, serverRepo *gameserverrepo.Repository) *Service {
-	return &Service{repo: repo, playerRepo: playerRepo, serverRepo: serverRepo}
+func New(cfg config.Config, repo *auditrepo.Repository, playerRepo *playerrepo.Repository, serverRepo *gameserverrepo.Repository) *Service {
+	return &Service{cfg: cfg, repo: repo, playerRepo: playerRepo, serverRepo: serverRepo}
 }
 
 type IngestEvent struct {
@@ -113,6 +116,21 @@ func (s *Service) ListByPlayer(ctx context.Context, playerID uuid.UUID, from, to
 		return nil, apperrors.InternalCause(apperrors.CodeAuditListV1ServiceListFailed, apperrors.MsgAuditListV1ServiceListFailed, err)
 	}
 	return events, nil
+}
+
+func (s *Service) PurgeOld(ctx context.Context) (int64, error) {
+	if !s.cfg.AuditPurgeEnabled || s.cfg.AuditRetentionDays <= 0 {
+		return 0, nil
+	}
+	cutoff := time.Now().UTC().Add(-time.Duration(s.cfg.AuditRetentionDays) * 24 * time.Hour)
+	n, err := s.repo.PurgeBefore(ctx, cutoff)
+	if err != nil {
+		return 0, err
+	}
+	if n > 0 {
+		log.Printf("audit purge: removed %d events older than %d days", n, s.cfg.AuditRetentionDays)
+	}
+	return n, nil
 }
 
 func validAuditEventType(t string) bool {
