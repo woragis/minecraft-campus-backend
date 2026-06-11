@@ -74,7 +74,7 @@ const (
 	MsgPlayerGetV1ServiceLoadFailed  = "Could not load player."
 )
 
-// GET /v1/players/minecraft/{minecraftUuid}
+// GET /v1/lookup/players/minecraft/{minecraftUuid}
 const (
 	CodePlayerGetMinecraftV1HandlerUUIDInvalid = "PLAYER_GET_MINECRAFT_V1_HANDLER_UUID_INVALID"
 	MsgPlayerGetMinecraftV1HandlerUUIDInvalid  = "minecraftUuid must be a valid UUID."

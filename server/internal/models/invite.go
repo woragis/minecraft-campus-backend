@@ -15,7 +15,7 @@ const (
 
 type Invite struct {
 	ID               uuid.UUID  `gorm:"type:uuid;primaryKey" json:"id"`
-	Code             string     `gorm:"uniqueIndex;not null" json:"code"`
+	Code             string     `gorm:"not null" json:"code"`
 	SponsorID        uuid.UUID  `gorm:"type:uuid;not null;column:sponsor_id" json:"sponsorId"`
 	TargetUsername   string     `gorm:"not null;column:target_username" json:"targetUsername"`
 	InvitedPlayerID  *uuid.UUID `gorm:"type:uuid;column:invited_player_id" json:"invitedPlayerId,omitempty"`

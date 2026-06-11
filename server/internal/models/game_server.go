@@ -8,7 +8,7 @@ import (
 
 type GameServer struct {
 	ID        uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
-	Slug      string    `gorm:"uniqueIndex;not null" json:"slug"`
+	Slug      string    `gorm:"not null" json:"slug"`
 	Name      string    `gorm:"not null" json:"name"`
 	CreatedAt time.Time `json:"createdAt"`
 }

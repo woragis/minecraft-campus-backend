@@ -13,7 +13,7 @@ const (
 
 type Guild struct {
 	ID          uuid.UUID `gorm:"type:uuid;primaryKey" json:"id"`
-	Slug        string    `gorm:"uniqueIndex;not null" json:"slug"`
+	Slug        string    `gorm:"not null" json:"slug"`
 	Name        string    `gorm:"not null" json:"name"`
 	LeaderID    uuid.UUID `gorm:"type:uuid;not null;column:leader_id" json:"leaderId"`
 	TrustScore  int       `gorm:"not null;default:100;column:trust_score" json:"trustScore"`

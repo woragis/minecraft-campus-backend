@@ -36,7 +36,6 @@ import (
 	trustsvc "github.com/woragis/minecraft-campus-backend/server/internal/trust/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/middleware"
 	"github.com/woragis/minecraft-campus-backend/server/internal/migrate"
-	"github.com/woragis/minecraft-campus-backend/server/internal/models"
 	playerrepo "github.com/woragis/minecraft-campus-backend/server/internal/player/repository"
 	playersvc "github.com/woragis/minecraft-campus-backend/server/internal/player/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/platform/postgres"
@@ -84,25 +83,7 @@ func main() {
 		}
 	}
 
-	if err := db.AutoMigrate(
-		&models.Player{},
-		&models.Invite{},
-		&models.GameServer{},
-		&models.ServerPlayer{},
-		&models.Guild{},
-		&models.GuildMember{},
-		&models.TrustEvent{},
-		&models.City{},
-		&models.Claim{},
-		&models.Alliance{},
-		&models.AuditEvent{},
-		&models.Rollback{},
-		&models.RollbackItem{},
-		&models.WorldSnapshot{},
-		&models.Alert{},
-	); err != nil {
-		log.Fatalf("automigrate: %v", err)
-	}
+	// Schema is owned by SQL migrations in /migrations (GORM AutoMigrate conflicts with PG constraint names).
 
 	playerRepository := playerrepo.New(db)
 	inviteRepository := inviterepo.New(db)

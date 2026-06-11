@@ -14,7 +14,7 @@ const (
 
 type Player struct {
 	ID             uuid.UUID  `gorm:"type:uuid;primaryKey" json:"id"`
-	MinecraftUUID  uuid.UUID  `gorm:"type:uuid;uniqueIndex;not null;column:minecraft_uuid" json:"minecraftUuid"`
+	MinecraftUUID  uuid.UUID  `gorm:"type:uuid;not null;column:minecraft_uuid" json:"minecraftUuid"`
 	Username       string     `gorm:"not null" json:"username"`
 	Status         string     `gorm:"not null;default:probation" json:"status"`
 	InvitedByID    *uuid.UUID `gorm:"type:uuid;column:invited_by_id" json:"invitedById,omitempty"`

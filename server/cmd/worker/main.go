@@ -18,7 +18,6 @@ import (
 	"github.com/woragis/minecraft-campus-backend/server/internal/config"
 	metricssvc "github.com/woragis/minecraft-campus-backend/server/internal/metrics/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/migrate"
-	"github.com/woragis/minecraft-campus-backend/server/internal/models"
 	"github.com/woragis/minecraft-campus-backend/server/internal/platform/postgres"
 	"github.com/woragis/minecraft-campus-backend/server/internal/worker"
 )
@@ -58,11 +57,6 @@ func main() {
 			}
 		}
 	}
-
-	_ = db.AutoMigrate(
-		&models.WorldSnapshot{},
-		&models.Alert{},
-	)
 
 	backupService := backupsvc.New(cfg, backuprepo.New(db), dsn)
 	metricsService := metricssvc.New(db)

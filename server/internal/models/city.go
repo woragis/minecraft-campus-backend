@@ -8,7 +8,7 @@ import (
 
 type City struct {
 	ID         uuid.UUID  `gorm:"type:uuid;primaryKey" json:"id"`
-	Slug       string     `gorm:"uniqueIndex;not null" json:"slug"`
+	Slug       string     `gorm:"not null" json:"slug"`
 	Name       string     `gorm:"not null" json:"name"`
 	FounderID  uuid.UUID  `gorm:"type:uuid;not null;column:founder_id" json:"founderId"`
 	GuildID    *uuid.UUID `gorm:"type:uuid;column:guild_id" json:"guildId,omitempty"`

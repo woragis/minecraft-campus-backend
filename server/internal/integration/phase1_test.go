@@ -119,25 +119,6 @@ func openTestDB(t *testing.T) (*gorm.DB, *sql.DB) {
 	if err := migrate.Up(ctx, sqlDB, dir); err != nil {
 		t.Fatalf("migrate: %v", err)
 	}
-	if err := db.AutoMigrate(
-		&models.Player{},
-		&models.Invite{},
-		&models.GameServer{},
-		&models.ServerPlayer{},
-		&models.Guild{},
-		&models.GuildMember{},
-		&models.TrustEvent{},
-		&models.City{},
-		&models.Claim{},
-		&models.Alliance{},
-		&models.AuditEvent{},
-		&models.Rollback{},
-		&models.RollbackItem{},
-		&models.WorldSnapshot{},
-		&models.Alert{},
-	); err != nil {
-		t.Fatalf("automigrate: %v", err)
-	}
 	return db, sqlDB
 }
 

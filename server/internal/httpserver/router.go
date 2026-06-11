@@ -43,7 +43,7 @@ func Mount(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /v1/alerts", alh.list)
 	mux.HandleFunc("POST /v1/alerts/{id}/acknowledge", alh.acknowledge)
 
-	mux.HandleFunc("GET /v1/cities/slug/{slug}", ch.getBySlug)
+	mux.HandleFunc("GET /v1/lookup/cities/{slug}", ch.getBySlug)
 	mux.HandleFunc("GET /v1/cities/{id}/claims", clh.listByCity)
 	mux.HandleFunc("GET /v1/cities/{id}", ch.getByID)
 	mux.HandleFunc("GET /v1/cities", ch.list)
@@ -51,12 +51,12 @@ func Mount(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /v1/claims/{id}", clh.getByID)
 
 	mux.HandleFunc("GET /v1/guilds/{id}/alliances", ah.listByGuild)
-	mux.HandleFunc("GET /v1/guilds/slug/{slug}", gh.getBySlug)
+	mux.HandleFunc("GET /v1/lookup/guilds/{slug}", gh.getBySlug)
 	mux.HandleFunc("GET /v1/guilds/{id}/members", gh.listMembers)
 	mux.HandleFunc("GET /v1/guilds/{id}", gh.getByID)
 	mux.HandleFunc("GET /v1/guilds", gh.list)
 
-	mux.HandleFunc("GET /v1/players/minecraft/{minecraftUuid}", ph.getByMinecraftUUID)
+	mux.HandleFunc("GET /v1/lookup/players/minecraft/{minecraftUuid}", ph.getByMinecraftUUID)
 	mux.HandleFunc("GET /v1/players/{id}/audit-events", auh.listByPlayer)
 	mux.HandleFunc("GET /v1/players/{id}/trust-events", th.listEvents)
 	mux.HandleFunc("GET /v1/players/{id}/sponsor-tree", th.sponsorTree)

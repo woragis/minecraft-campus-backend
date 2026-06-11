@@ -117,12 +117,12 @@ curl http://127.0.0.1:8080/health
 | POST | `/v1/internal/players/upsert` | `X-Plugin-Key` |
 | POST | `/v1/internal/invites` | `X-Plugin-Key` |
 | GET | `/v1/players/{id}` | — |
-| GET | `/v1/players/minecraft/{minecraftUuid}` | — |
+| GET | `/v1/lookup/players/minecraft/{minecraftUuid}` | — |
 | GET | `/v1/players/{id}/invites` | — |
 | GET | `/v1/invites/{code}` | — |
 | GET | `/v1/guilds` | — |
 | GET | `/v1/guilds/{id}` | — |
-| GET | `/v1/guilds/slug/{slug}` | — |
+| GET | `/v1/lookup/guilds/{slug}` | — |
 | GET | `/v1/guilds/{id}/members` | — |
 | GET | `/v1/players/{id}/trust-events` | — |
 | GET | `/v1/players/{id}/sponsor-tree` | — |
@@ -132,7 +132,7 @@ curl http://127.0.0.1:8080/health
 | POST | `/v1/internal/trust/events` | `X-Plugin-Key` |
 | GET | `/v1/cities` | — |
 | GET | `/v1/cities/{id}` | — |
-| GET | `/v1/cities/slug/{slug}` | — |
+| GET | `/v1/lookup/cities/{slug}` | — |
 | GET | `/v1/cities/{id}/claims` | — |
 | GET | `/v1/claims/{id}` | — |
 | GET | `/v1/guilds/{id}/alliances` | — |
