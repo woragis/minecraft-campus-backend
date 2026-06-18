@@ -16,6 +16,7 @@ import (
 	guildsvc "github.com/woragis/minecraft-campus-backend/server/internal/guild/service"
 	invitesvc "github.com/woragis/minecraft-campus-backend/server/internal/invite/service"
 	playersvc "github.com/woragis/minecraft-campus-backend/server/internal/player/service"
+	presencesvc "github.com/woragis/minecraft-campus-backend/server/internal/presence"
 	rollbacksvc "github.com/woragis/minecraft-campus-backend/server/internal/rollback/service"
 	trustsvc "github.com/woragis/minecraft-campus-backend/server/internal/trust/service"
 )
@@ -23,6 +24,7 @@ import (
 type internalHandler struct {
 	pluginAPIKey string
 	players      *playersvc.Service
+	presence     *presencesvc.Service
 	invites      *invitesvc.Service
 	guilds       *guildsvc.Service
 	trust        *trustsvc.Service
@@ -36,6 +38,7 @@ type internalHandler struct {
 func newInternalHandler(
 	pluginAPIKey string,
 	players *playersvc.Service,
+	presence *presencesvc.Service,
 	invites *invitesvc.Service,
 	guilds *guildsvc.Service,
 	trust *trustsvc.Service,
@@ -48,6 +51,7 @@ func newInternalHandler(
 	return &internalHandler{
 		pluginAPIKey: pluginAPIKey,
 		players:      players,
+		presence:     presence,
 		invites:      invites,
 		guilds:       guilds,
 		trust:        trust,
@@ -115,6 +119,9 @@ func (h *internalHandler) upsertBedrockPlayer(w http.ResponseWriter, r *http.Req
 		apperrors.WriteError(w, err)
 		return
 	}
+	if h.presence != nil {
+		_ = h.presence.MarkOnlineForPlayer(r.Context(), player, body.ServerSlug, "bedrock")
+	}
 	writeJSON(w, http.StatusOK, player)
 }
 
@@ -135,6 +142,9 @@ func (h *internalHandler) upsertPlayer(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		apperrors.WriteError(w, err)
 		return
+	}
+	if h.presence != nil {
+		_ = h.presence.MarkOnlineForPlayer(r.Context(), player, body.ServerSlug, "java")
 	}
 	writeJSON(w, http.StatusOK, player)
 }
@@ -619,4 +629,88 @@ func (h *internalHandler) completeRollback(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	writeJSON(w, http.StatusOK, rb)
+}
+
+type presencePlayerBody struct {
+	PlayerID   string `json:"playerId"`
+	Username   string `json:"username"`
+	ServerSlug string `json:"serverSlug"`
+	Platform   string `json:"platform"`
+}
+
+func (h *internalHandler) presenceOnline(w http.ResponseWriter, r *http.Request) {
+	var body presencePlayerBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodePresenceOnlineV1HandlerBodyInvalid, apperrors.MsgPresenceOnlineV1HandlerBodyInvalid, err))
+		return
+	}
+	playerID, err := uuid.Parse(strings.TrimSpace(body.PlayerID))
+	if err != nil || playerID == uuid.Nil || strings.TrimSpace(body.Username) == "" || strings.TrimSpace(body.ServerSlug) == "" {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodePresenceOnlineV1HandlerBodyInvalid, apperrors.MsgPresenceOnlineV1HandlerBodyInvalid))
+		return
+	}
+	if h.presence == nil {
+		writeJSON(w, http.StatusOK, map[string]string{"status": "disabled"})
+		return
+	}
+	if err := h.presence.MarkOnline(r.Context(), playerID, body.Username, body.ServerSlug, body.Platform); err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "online"})
+}
+
+type presenceOfflineBody struct {
+	PlayerID   string `json:"playerId"`
+	ServerSlug string `json:"serverSlug"`
+}
+
+func (h *internalHandler) presenceOffline(w http.ResponseWriter, r *http.Request) {
+	var body presenceOfflineBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodePresenceOfflineV1HandlerBodyInvalid, apperrors.MsgPresenceOfflineV1HandlerBodyInvalid, err))
+		return
+	}
+	playerID, err := uuid.Parse(strings.TrimSpace(body.PlayerID))
+	if err != nil || playerID == uuid.Nil || strings.TrimSpace(body.ServerSlug) == "" {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodePresenceOfflineV1HandlerBodyInvalid, apperrors.MsgPresenceOfflineV1HandlerBodyInvalid))
+		return
+	}
+	if h.presence == nil {
+		writeJSON(w, http.StatusOK, map[string]string{"status": "disabled"})
+		return
+	}
+	if err := h.presence.MarkOffline(r.Context(), playerID, body.ServerSlug); err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "offline"})
+}
+
+func (h *internalHandler) presenceHeartbeat(w http.ResponseWriter, r *http.Request) {
+	var body presenceOfflineBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodePresenceHeartbeatV1HandlerBodyInvalid, apperrors.MsgPresenceHeartbeatV1HandlerBodyInvalid, err))
+		return
+	}
+	playerID, err := uuid.Parse(strings.TrimSpace(body.PlayerID))
+	if err != nil || playerID == uuid.Nil || strings.TrimSpace(body.ServerSlug) == "" {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodePresenceHeartbeatV1HandlerBodyInvalid, apperrors.MsgPresenceHeartbeatV1HandlerBodyInvalid))
+		return
+	}
+	if h.presence == nil {
+		writeJSON(w, http.StatusOK, map[string]string{"status": "disabled"})
+		return
+	}
+	if err := h.presence.Heartbeat(r.Context(), playerID, body.ServerSlug); err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }

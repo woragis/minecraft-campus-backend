@@ -36,6 +36,8 @@ import (
 	trustsvc "github.com/woragis/minecraft-campus-backend/server/internal/trust/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/middleware"
 	"github.com/woragis/minecraft-campus-backend/server/internal/migrate"
+	"github.com/woragis/minecraft-campus-backend/server/internal/presence"
+	redisplatform "github.com/woragis/minecraft-campus-backend/server/internal/platform/redis"
 	playerrepo "github.com/woragis/minecraft-campus-backend/server/internal/player/repository"
 	playersvc "github.com/woragis/minecraft-campus-backend/server/internal/player/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/platform/postgres"
@@ -120,11 +122,24 @@ func main() {
 	metricsService := metricssvc.New(db)
 	alertsService := alertssvc.New(appCfg, alertsrepo.New(db))
 
+	var presenceStore presence.Store = presence.NewNoopStore()
+	if appCfg.RedisEnabled {
+		redisClient, err := redisplatform.Open(appCfg.RedisURL)
+		if err != nil {
+			log.Fatalf("redis: %v", err)
+		}
+		defer func() { _ = redisClient.Close() }()
+		presenceStore = presence.NewRedisStore(redisClient, appCfg.PresenceTTLSeconds)
+		log.Printf("redis presence enabled (ttl=%ds)", appCfg.PresenceTTLSeconds)
+	}
+	presenceService := presence.New(presenceStore, guildRepository, playerRepository)
+
 	app := &httpserver.App{
 		DB:           db,
 		PluginAPIKey: pluginAPIKey,
 		Config:       appCfg,
 		Players:      playerService,
+		Presence:     presenceService,
 		Invites:      inviteService,
 		Guilds:       guildService,
 		Trust:        trustService,

@@ -14,7 +14,8 @@ func Mount(mux *http.ServeMux, app *App) {
 	rbh := newRollbackHandler(app.Rollback)
 	mh := newMetricsHandler(app.Metrics)
 	alh := newAlertsHandler(app.Alerts)
-	in := newInternalHandler(app.PluginAPIKey, app.Players, app.Invites, app.Guilds, app.Trust, app.Cities, app.Claims, app.Alliances, app.Audit, app.Rollback)
+	prh := newPresenceHandler(app.Presence)
+	in := newInternalHandler(app.PluginAPIKey, app.Players, app.Presence, app.Invites, app.Guilds, app.Trust, app.Cities, app.Claims, app.Alliances, app.Audit, app.Rollback)
 
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.HandleFunc("GET /ready", handleReady(app.DB))
@@ -37,6 +38,14 @@ func Mount(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /v1/internal/rollbacks", in.requirePluginKey(in.createRollback))
 	mux.HandleFunc("GET /v1/internal/rollbacks/{id}/items", in.requirePluginKey(in.listRollbackItems))
 	mux.HandleFunc("POST /v1/internal/rollbacks/{id}/complete", in.requirePluginKey(in.completeRollback))
+
+	mux.HandleFunc("POST /v1/internal/presence/online", in.requirePluginKey(in.presenceOnline))
+	mux.HandleFunc("POST /v1/internal/presence/offline", in.requirePluginKey(in.presenceOffline))
+	mux.HandleFunc("POST /v1/internal/presence/heartbeat", in.requirePluginKey(in.presenceHeartbeat))
+
+	mux.HandleFunc("GET /v1/presence/overview", prh.overview)
+	mux.HandleFunc("GET /v1/presence/servers/{slug}", prh.server)
+	mux.HandleFunc("GET /v1/presence/guilds/{id}", prh.guild)
 
 	mux.HandleFunc("GET /v1/rollbacks/{id}", rbh.getByID)
 

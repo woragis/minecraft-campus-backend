@@ -10,6 +10,7 @@ import (
 	guildsvc "github.com/woragis/minecraft-campus-backend/server/internal/guild/service"
 	invitesvc "github.com/woragis/minecraft-campus-backend/server/internal/invite/service"
 	playersvc "github.com/woragis/minecraft-campus-backend/server/internal/player/service"
+	presencesvc "github.com/woragis/minecraft-campus-backend/server/internal/presence"
 	metricssvc "github.com/woragis/minecraft-campus-backend/server/internal/metrics/service"
 	rollbacksvc "github.com/woragis/minecraft-campus-backend/server/internal/rollback/service"
 	trustsvc "github.com/woragis/minecraft-campus-backend/server/internal/trust/service"
@@ -21,6 +22,7 @@ type App struct {
 	PluginAPIKey string
 	Config       config.Config
 	Players      *playersvc.Service
+	Presence     *presencesvc.Service
 	Invites      *invitesvc.Service
 	Guilds       *guildsvc.Service
 	Trust        *trustsvc.Service

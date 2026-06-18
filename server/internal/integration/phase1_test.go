@@ -42,6 +42,7 @@ import (
 	"github.com/woragis/minecraft-campus-backend/server/internal/middleware"
 	"github.com/woragis/minecraft-campus-backend/server/internal/migrate"
 	"github.com/woragis/minecraft-campus-backend/server/internal/models"
+	"github.com/woragis/minecraft-campus-backend/server/internal/presence"
 	playerrepo "github.com/woragis/minecraft-campus-backend/server/internal/player/repository"
 	playersvc "github.com/woragis/minecraft-campus-backend/server/internal/player/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/platform/postgres"
@@ -161,11 +162,13 @@ func newTestHandler(db *gorm.DB) http.Handler {
 	rollbackService := rollbacksvc.New(rollbackRepository, auditRepository, playerRepository, gameServerRepository, trustService)
 	metricsService := metricssvc.New(db)
 	alertsService := alertssvc.New(testCfg, alertsrepo.New(db))
+	presenceService := presence.New(presence.NewNoopStore(), guildRepository, playerRepository)
 	app := &httpserver.App{
 		DB:           db,
 		PluginAPIKey: testPluginKey,
 		Config:       testCfg,
 		Players:      playerService,
+		Presence:     presenceService,
 		Invites:      inviteService,
 		Guilds:       guildService,
 		Trust:        trustService,

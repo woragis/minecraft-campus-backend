@@ -42,6 +42,8 @@ type Config struct {
 	AuditPurgeIntervalHrs int
 
 	RedisEnabled bool
+	RedisURL     string
+	PresenceTTLSeconds int
 }
 
 func Load() Config {
@@ -76,6 +78,8 @@ func Load() Config {
 	cfg.AuditPurgeIntervalHrs = envInt("AUDIT_PURGE_INTERVAL_HOURS", cfg.AuditPurgeIntervalHrs)
 
 	cfg.RedisEnabled = envBool("REDIS_ENABLED", cfg.RedisEnabled)
+	cfg.RedisURL = envOr("REDIS_URL", cfg.RedisURL)
+	cfg.PresenceTTLSeconds = envInt("PRESENCE_TTL_SECONDS", cfg.PresenceTTLSeconds)
 
 	return cfg
 }
@@ -101,6 +105,8 @@ func defaultsForProfile(p Profile) Config {
 			AuditPurgeEnabled:           true,
 			AuditPurgeIntervalHrs:       24,
 			RedisEnabled:                false,
+			RedisURL:                    "redis://127.0.0.1:6379/0",
+			PresenceTTLSeconds:          120,
 		}
 	case ProfileProduction:
 		return Config{
@@ -123,7 +129,9 @@ func defaultsForProfile(p Profile) Config {
 			AuditRetentionDays:          90,
 			AuditPurgeEnabled:           true,
 			AuditPurgeIntervalHrs:       24,
-			RedisEnabled:                false,
+			RedisEnabled:                true,
+			RedisURL:                    "redis://redis:6379/0",
+			PresenceTTLSeconds:          120,
 		}
 	default: // budget
 		return Config{
@@ -147,6 +155,8 @@ func defaultsForProfile(p Profile) Config {
 			AuditPurgeEnabled:           true,
 			AuditPurgeIntervalHrs:       24,
 			RedisEnabled:                false,
+			RedisURL:                    "redis://127.0.0.1:6379/0",
+			PresenceTTLSeconds:          120,
 		}
 	}
 }

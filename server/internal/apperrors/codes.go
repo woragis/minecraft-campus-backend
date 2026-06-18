@@ -59,6 +59,42 @@ const (
 	MsgBedrockPlayerUpsertV1ServiceFailed  = "Could not upsert bedrock player."
 )
 
+// POST /v1/internal/presence/*
+const (
+	CodePresenceOnlineV1HandlerBodyInvalid = "PRESENCE_ONLINE_V1_HANDLER_BODY_INVALID"
+	MsgPresenceOnlineV1HandlerBodyInvalid  = "Request body must include playerId, username, and serverSlug."
+
+	CodePresenceOnlineV1ServiceFailed = "PRESENCE_ONLINE_V1_SERVICE_FAILED"
+	MsgPresenceOnlineV1ServiceFailed  = "Could not mark player online."
+
+	CodePresenceOfflineV1HandlerBodyInvalid = "PRESENCE_OFFLINE_V1_HANDLER_BODY_INVALID"
+	MsgPresenceOfflineV1HandlerBodyInvalid  = "Request body must include playerId and serverSlug."
+
+	CodePresenceOfflineV1ServiceFailed = "PRESENCE_OFFLINE_V1_SERVICE_FAILED"
+	MsgPresenceOfflineV1ServiceFailed  = "Could not mark player offline."
+
+	CodePresenceHeartbeatV1HandlerBodyInvalid = "PRESENCE_HEARTBEAT_V1_HANDLER_BODY_INVALID"
+	MsgPresenceHeartbeatV1HandlerBodyInvalid  = "Request body must include playerId and serverSlug."
+
+	CodePresenceHeartbeatV1ServiceFailed = "PRESENCE_HEARTBEAT_V1_SERVICE_FAILED"
+	MsgPresenceHeartbeatV1ServiceFailed  = "Could not refresh presence heartbeat."
+)
+
+// GET /v1/presence/*
+const (
+	CodePresenceOverviewV1ServiceFailed = "PRESENCE_OVERVIEW_V1_SERVICE_FAILED"
+	MsgPresenceOverviewV1ServiceFailed  = "Could not load presence overview."
+
+	CodePresenceServerV1HandlerSlugInvalid = "PRESENCE_SERVER_V1_HANDLER_SLUG_INVALID"
+	MsgPresenceServerV1HandlerSlugInvalid  = "server slug is required."
+
+	CodePresenceServerV1ServiceFailed = "PRESENCE_SERVER_V1_SERVICE_FAILED"
+	MsgPresenceServerV1ServiceFailed  = "Could not load server presence."
+
+	CodePresenceGuildV1ServiceFailed = "PRESENCE_GUILD_V1_SERVICE_FAILED"
+	MsgPresenceGuildV1ServiceFailed  = "Could not load guild presence."
+)
+
 // POST /v1/internal/invites
 const (
 	CodeInvitePostInternalV1HandlerBodyInvalid = "INVITE_POST_INTERNAL_V1_HANDLER_BODY_INVALID"
