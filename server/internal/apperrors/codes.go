@@ -41,6 +41,24 @@ const (
 	MsgPlayerUpsertV1ServiceFailed  = "Could not upsert player."
 )
 
+// GET /v1/internal/whitelist/bedrock/{xuid}
+const (
+	CodeBedrockWhitelistGetV1HandlerXUIDInvalid = "BEDROCK_WHITELIST_GET_V1_HANDLER_XUID_INVALID"
+	MsgBedrockWhitelistGetV1HandlerXUIDInvalid  = "xuid must be a non-empty numeric Xbox user id."
+
+	CodeBedrockWhitelistGetV1ServiceCheckFailed = "BEDROCK_WHITELIST_GET_V1_SERVICE_CHECK_FAILED"
+	MsgBedrockWhitelistGetV1ServiceCheckFailed  = "Could not check bedrock whitelist."
+)
+
+// POST /v1/internal/players/bedrock/upsert
+const (
+	CodeBedrockPlayerUpsertV1HandlerBodyInvalid = "BEDROCK_PLAYER_UPSERT_V1_HANDLER_BODY_INVALID"
+	MsgBedrockPlayerUpsertV1HandlerBodyInvalid  = "Request body must include xuid, username, and serverSlug."
+
+	CodeBedrockPlayerUpsertV1ServiceFailed = "BEDROCK_PLAYER_UPSERT_V1_SERVICE_FAILED"
+	MsgBedrockPlayerUpsertV1ServiceFailed  = "Could not upsert bedrock player."
+)
+
 // POST /v1/internal/invites
 const (
 	CodeInvitePostInternalV1HandlerBodyInvalid = "INVITE_POST_INTERNAL_V1_HANDLER_BODY_INVALID"

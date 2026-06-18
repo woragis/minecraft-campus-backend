@@ -59,6 +59,17 @@ func newInternalHandler(
 	}
 }
 
+func (h *internalHandler) bedrockWhitelist(w http.ResponseWriter, r *http.Request) {
+	xuid := strings.TrimSpace(r.PathValue("xuid"))
+	username := strings.TrimSpace(r.URL.Query().Get("username"))
+	out, err := h.players.CheckBedrockWhitelist(r.Context(), xuid, username)
+	if err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
+}
+
 func (h *internalHandler) whitelist(w http.ResponseWriter, r *http.Request) {
 	uuidStr := r.PathValue("minecraftUuid")
 	mcUUID, err := uuid.Parse(uuidStr)
@@ -79,6 +90,32 @@ type upsertPlayerBody struct {
 	MinecraftUUID string `json:"minecraftUuid"`
 	Username      string `json:"username"`
 	ServerSlug    string `json:"serverSlug"`
+}
+
+type upsertBedrockPlayerBody struct {
+	XUID       string `json:"xuid"`
+	Username   string `json:"username"`
+	ServerSlug string `json:"serverSlug"`
+}
+
+func (h *internalHandler) upsertBedrockPlayer(w http.ResponseWriter, r *http.Request) {
+	var body upsertBedrockPlayerBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodeBedrockPlayerUpsertV1HandlerBodyInvalid, apperrors.MsgBedrockPlayerUpsertV1HandlerBodyInvalid, err))
+		return
+	}
+	if strings.TrimSpace(body.XUID) == "" || strings.TrimSpace(body.Username) == "" || strings.TrimSpace(body.ServerSlug) == "" {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeBedrockPlayerUpsertV1HandlerBodyInvalid, apperrors.MsgBedrockPlayerUpsertV1HandlerBodyInvalid))
+		return
+	}
+	player, err := h.players.UpsertBedrockFromServer(r.Context(), body.XUID, body.Username, body.ServerSlug)
+	if err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, player)
 }
 
 func (h *internalHandler) upsertPlayer(w http.ResponseWriter, r *http.Request) {

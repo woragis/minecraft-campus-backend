@@ -19,7 +19,9 @@ func Mount(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.HandleFunc("GET /ready", handleReady(app.DB))
 
+	mux.HandleFunc("GET /v1/internal/whitelist/bedrock/{xuid}", in.requirePluginKey(in.bedrockWhitelist))
 	mux.HandleFunc("GET /v1/internal/whitelist/{minecraftUuid}", in.requirePluginKey(in.whitelist))
+	mux.HandleFunc("POST /v1/internal/players/bedrock/upsert", in.requirePluginKey(in.upsertBedrockPlayer))
 	mux.HandleFunc("POST /v1/internal/players/upsert", in.requirePluginKey(in.upsertPlayer))
 	mux.HandleFunc("POST /v1/internal/invites", in.requirePluginKey(in.createInvite))
 	mux.HandleFunc("POST /v1/internal/guilds", in.requirePluginKey(in.createGuild))
