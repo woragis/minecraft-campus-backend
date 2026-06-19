@@ -102,6 +102,36 @@ func (s *Service) Join(ctx context.Context, guildID, playerMinecraftUUID uuid.UU
 	return s.refreshGuildTrust(ctx, guildID)
 }
 
+func (s *Service) JoinBySlug(ctx context.Context, slug string, playerMinecraftUUID uuid.UUID) error {
+	slug = strings.TrimSpace(slug)
+	if slug == "" {
+		return apperrors.Invalid(apperrors.CodeGuildGetV1HandlerIDInvalid, apperrors.MsgGuildGetV1HandlerIDInvalid)
+	}
+	guild, err := s.repo.FindBySlug(ctx, slug)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return apperrors.NotFound(apperrors.CodeGuildJoinV1ServiceGuildNotFound, apperrors.MsgGuildJoinV1ServiceGuildNotFound)
+		}
+		return apperrors.InternalCause(apperrors.CodeGuildJoinV1ServiceFailed, apperrors.MsgGuildJoinV1ServiceFailed, err)
+	}
+	return s.Join(ctx, guild.ID, playerMinecraftUUID)
+}
+
+func (s *Service) LeaveBySlug(ctx context.Context, slug string, playerMinecraftUUID uuid.UUID) error {
+	slug = strings.TrimSpace(slug)
+	if slug == "" {
+		return apperrors.Invalid(apperrors.CodeGuildGetV1HandlerIDInvalid, apperrors.MsgGuildGetV1HandlerIDInvalid)
+	}
+	guild, err := s.repo.FindBySlug(ctx, slug)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return apperrors.NotFound(apperrors.CodeGuildLeaveV1ServiceGuildNotFound, apperrors.MsgGuildLeaveV1ServiceGuildNotFound)
+		}
+		return apperrors.InternalCause(apperrors.CodeGuildLeaveV1ServiceFailed, apperrors.MsgGuildLeaveV1ServiceFailed, err)
+	}
+	return s.Leave(ctx, guild.ID, playerMinecraftUUID)
+}
+
 func (s *Service) Leave(ctx context.Context, guildID, playerMinecraftUUID uuid.UUID) error {
 	player, err := s.playerRepo.FindByMinecraftUUID(ctx, playerMinecraftUUID)
 	if err != nil {

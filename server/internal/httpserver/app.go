@@ -12,6 +12,7 @@ import (
 	playersvc "github.com/woragis/minecraft-campus-backend/server/internal/player/service"
 	presencesvc "github.com/woragis/minecraft-campus-backend/server/internal/presence"
 	statssvc "github.com/woragis/minecraft-campus-backend/server/internal/stats"
+	"github.com/woragis/minecraft-campus-backend/server/internal/webauth"
 	metricssvc "github.com/woragis/minecraft-campus-backend/server/internal/metrics/service"
 	rollbacksvc "github.com/woragis/minecraft-campus-backend/server/internal/rollback/service"
 	trustsvc "github.com/woragis/minecraft-campus-backend/server/internal/trust/service"
@@ -25,6 +26,7 @@ type App struct {
 	Players      *playersvc.Service
 	Presence     *presencesvc.Service
 	Stats        *statssvc.Service
+	WebAuth      *webauth.Service
 	Invites      *invitesvc.Service
 	Guilds       *guildsvc.Service
 	Trust        *trustsvc.Service

@@ -505,3 +505,24 @@ const (
 	CodeAlertsAckV1ServiceFailed = "ALERTS_ACK_V1_SERVICE_FAILED"
 	MsgAlertsAckV1ServiceFailed  = "Could not acknowledge alert."
 )
+
+// Web link + session
+const (
+	CodeWebLinkV1HandlerBodyInvalid = "WEB_LINK_V1_HANDLER_BODY_INVALID"
+	MsgWebLinkV1HandlerBodyInvalid  = "Request body must include playerId."
+
+	CodeWebLinkV1ServiceFailed = "WEB_LINK_V1_SERVICE_FAILED"
+	MsgWebLinkV1ServiceFailed  = "Could not create web link code."
+
+	CodeWebSessionV1HandlerBodyInvalid = "WEB_SESSION_V1_HANDLER_BODY_INVALID"
+	MsgWebSessionV1HandlerBodyInvalid  = "Request body must include code."
+
+	CodeWebSessionV1HandlerCodeInvalid = "WEB_SESSION_V1_HANDLER_CODE_INVALID"
+	MsgWebSessionV1HandlerCodeInvalid  = "Link code is invalid or expired."
+
+	CodeWebSessionV1HandlerMissing = "WEB_SESSION_V1_HANDLER_MISSING"
+	MsgWebSessionV1HandlerMissing  = "Session token is required."
+
+	CodeWebSessionV1HandlerInvalid = "WEB_SESSION_V1_HANDLER_INVALID"
+	MsgWebSessionV1HandlerInvalid  = "Session token is invalid or expired."
+)

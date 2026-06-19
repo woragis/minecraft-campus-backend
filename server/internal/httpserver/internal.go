@@ -20,6 +20,7 @@ import (
 	statssvc "github.com/woragis/minecraft-campus-backend/server/internal/stats"
 	rollbacksvc "github.com/woragis/minecraft-campus-backend/server/internal/rollback/service"
 	trustsvc "github.com/woragis/minecraft-campus-backend/server/internal/trust/service"
+	"github.com/woragis/minecraft-campus-backend/server/internal/webauth"
 )
 
 type internalHandler struct {
@@ -35,6 +36,7 @@ type internalHandler struct {
 	alliances    *alliancesvc.Service
 	audit        *auditsvc.Service
 	rollback     *rollbacksvc.Service
+	webAuth      *webauth.Service
 }
 
 func newInternalHandler(
@@ -50,6 +52,7 @@ func newInternalHandler(
 	alliances *alliancesvc.Service,
 	audit *auditsvc.Service,
 	rollback *rollbacksvc.Service,
+	webAuth *webauth.Service,
 ) *internalHandler {
 	return &internalHandler{
 		pluginAPIKey: pluginAPIKey,
@@ -64,6 +67,7 @@ func newInternalHandler(
 		alliances:    alliances,
 		audit:        audit,
 		rollback:     rollback,
+		webAuth:      webAuth,
 	}
 }
 
@@ -234,6 +238,27 @@ func (h *internalHandler) joinGuild(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "joined"})
 }
 
+func (h *internalHandler) joinGuildBySlug(w http.ResponseWriter, r *http.Request) {
+	slug := r.PathValue("slug")
+	var body guildPlayerBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodeGuildPostV1HandlerBodyInvalid, apperrors.MsgGuildPostV1HandlerBodyInvalid, err))
+		return
+	}
+	playerUUID, err := uuid.Parse(strings.TrimSpace(body.PlayerUUID))
+	if err != nil || playerUUID == uuid.Nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeGuildPostV1HandlerBodyInvalid, apperrors.MsgGuildPostV1HandlerBodyInvalid))
+		return
+	}
+	if err := h.guilds.JoinBySlug(r.Context(), slug, playerUUID); err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "joined"})
+}
+
 func (h *internalHandler) leaveGuild(w http.ResponseWriter, r *http.Request) {
 	guildID, err := uuid.Parse(r.PathValue("id"))
 	if err != nil || guildID == uuid.Nil {
@@ -257,6 +282,68 @@ func (h *internalHandler) leaveGuild(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "left"})
+}
+
+func (h *internalHandler) leaveGuildBySlug(w http.ResponseWriter, r *http.Request) {
+	slug := r.PathValue("slug")
+	var body guildPlayerBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodeGuildPostV1HandlerBodyInvalid, apperrors.MsgGuildPostV1HandlerBodyInvalid, err))
+		return
+	}
+	playerUUID, err := uuid.Parse(strings.TrimSpace(body.PlayerUUID))
+	if err != nil || playerUUID == uuid.Nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeGuildPostV1HandlerBodyInvalid, apperrors.MsgGuildPostV1HandlerBodyInvalid))
+		return
+	}
+	if err := h.guilds.LeaveBySlug(r.Context(), slug, playerUUID); err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "left"})
+}
+
+type webLinkCodeBody struct {
+	PlayerID string `json:"playerId"`
+}
+
+func (h *internalHandler) createWebLinkCode(w http.ResponseWriter, r *http.Request) {
+	var body webLinkCodeBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodeWebLinkV1HandlerBodyInvalid, apperrors.MsgWebLinkV1HandlerBodyInvalid, err))
+		return
+	}
+	playerID, err := uuid.Parse(strings.TrimSpace(body.PlayerID))
+	if err != nil || playerID == uuid.Nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeWebLinkV1HandlerBodyInvalid, apperrors.MsgWebLinkV1HandlerBodyInvalid))
+		return
+	}
+	if h.webAuth == nil {
+		apperrors.WriteError(w, apperrors.InternalErr(apperrors.CodeWebLinkV1ServiceFailed, apperrors.MsgWebLinkV1ServiceFailed))
+		return
+	}
+	player, err := h.players.GetByID(r.Context(), playerID)
+	if err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	code, ttl, err := h.webAuth.CreateLinkCode(r.Context(), webauth.LinkPayload{
+		PlayerID:      player.ID,
+		MinecraftUUID: player.MinecraftUUID,
+		Username:      player.Username,
+	})
+	if err != nil {
+		apperrors.WriteError(w, apperrors.InternalCause(apperrors.CodeWebLinkV1ServiceFailed, apperrors.MsgWebLinkV1ServiceFailed, err))
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"code":               code,
+		"expiresInSeconds": int(ttl.Seconds()),
+	})
 }
 
 type trustEventBody struct {

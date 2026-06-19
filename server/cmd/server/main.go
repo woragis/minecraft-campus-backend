@@ -39,6 +39,7 @@ import (
 	"github.com/woragis/minecraft-campus-backend/server/internal/presence"
 	redisplatform "github.com/woragis/minecraft-campus-backend/server/internal/platform/redis"
 	statssvc "github.com/woragis/minecraft-campus-backend/server/internal/stats"
+	"github.com/woragis/minecraft-campus-backend/server/internal/webauth"
 	playerrepo "github.com/woragis/minecraft-campus-backend/server/internal/player/repository"
 	playersvc "github.com/woragis/minecraft-campus-backend/server/internal/player/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/platform/postgres"
@@ -135,6 +136,7 @@ func main() {
 	}
 	presenceService := presence.New(presenceStore, guildRepository, playerRepository)
 	statsService := statssvc.New(gameServerRepository, playerRepository, guildRepository, presenceService)
+	webAuthService := webauth.New(5*time.Minute, 24*time.Hour)
 
 	app := &httpserver.App{
 		DB:           db,
@@ -143,6 +145,7 @@ func main() {
 		Players:      playerService,
 		Presence:     presenceService,
 		Stats:        statsService,
+		WebAuth:      webAuthService,
 		Invites:      inviteService,
 		Guilds:       guildService,
 		Trust:        trustService,

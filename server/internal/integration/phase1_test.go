@@ -44,6 +44,7 @@ import (
 	"github.com/woragis/minecraft-campus-backend/server/internal/models"
 	"github.com/woragis/minecraft-campus-backend/server/internal/presence"
 	statssvc "github.com/woragis/minecraft-campus-backend/server/internal/stats"
+	"github.com/woragis/minecraft-campus-backend/server/internal/webauth"
 	playerrepo "github.com/woragis/minecraft-campus-backend/server/internal/player/repository"
 	playersvc "github.com/woragis/minecraft-campus-backend/server/internal/player/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/platform/postgres"
@@ -165,6 +166,7 @@ func newTestHandler(db *gorm.DB) http.Handler {
 	alertsService := alertssvc.New(testCfg, alertsrepo.New(db))
 	presenceService := presence.New(presence.NewNoopStore(), guildRepository, playerRepository)
 	statsService := statssvc.New(gameServerRepository, playerRepository, guildRepository, presenceService)
+	webAuthService := webauth.New(5*time.Minute, 24*time.Hour)
 	app := &httpserver.App{
 		DB:           db,
 		PluginAPIKey: testPluginKey,
@@ -172,6 +174,7 @@ func newTestHandler(db *gorm.DB) http.Handler {
 		Players:      playerService,
 		Presence:     presenceService,
 		Stats:        statsService,
+		WebAuth:      webAuthService,
 		Invites:      inviteService,
 		Guilds:       guildService,
 		Trust:        trustService,

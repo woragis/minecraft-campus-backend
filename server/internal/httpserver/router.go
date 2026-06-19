@@ -16,7 +16,9 @@ func Mount(mux *http.ServeMux, app *App) {
 	alh := newAlertsHandler(app.Alerts)
 	prh := newPresenceHandler(app.Presence)
 	sth := newStatsHandler(app.Stats)
-	in := newInternalHandler(app.PluginAPIKey, app.Players, app.Presence, app.Stats, app.Invites, app.Guilds, app.Trust, app.Cities, app.Claims, app.Alliances, app.Audit, app.Rollback)
+	wh := newWebHandler(app.WebAuth)
+	mhMe := newMeHandler(app.Players, app.Invites, app.Guilds, wh)
+	in := newInternalHandler(app.PluginAPIKey, app.Players, app.Presence, app.Stats, app.Invites, app.Guilds, app.Trust, app.Cities, app.Claims, app.Alliances, app.Audit, app.Rollback, app.WebAuth)
 
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.HandleFunc("GET /ready", handleReady(app.DB))
@@ -28,7 +30,10 @@ func Mount(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /v1/internal/invites", in.requirePluginKey(in.createInvite))
 	mux.HandleFunc("POST /v1/internal/guilds", in.requirePluginKey(in.createGuild))
 	mux.HandleFunc("POST /v1/internal/guilds/{id}/join", in.requirePluginKey(in.joinGuild))
+	mux.HandleFunc("POST /v1/internal/guilds/by-slug/{slug}/join", in.requirePluginKey(in.joinGuildBySlug))
 	mux.HandleFunc("POST /v1/internal/guilds/{id}/leave", in.requirePluginKey(in.leaveGuild))
+	mux.HandleFunc("POST /v1/internal/guilds/by-slug/{slug}/leave", in.requirePluginKey(in.leaveGuildBySlug))
+	mux.HandleFunc("POST /v1/internal/web/link-codes", in.requirePluginKey(in.createWebLinkCode))
 	mux.HandleFunc("POST /v1/internal/trust/events", in.requirePluginKey(in.recordTrustEvent))
 	mux.HandleFunc("POST /v1/internal/cities", in.requirePluginKey(in.createCity))
 	mux.HandleFunc("POST /v1/internal/claims", in.requirePluginKey(in.createClaim))
@@ -79,4 +84,8 @@ func Mount(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /v1/players/{id}/invites", ph.listInvitees)
 	mux.HandleFunc("GET /v1/players/{id}", ph.getByID)
 	mux.HandleFunc("GET /v1/invites/{code}", ih.getByCode)
+
+	mux.HandleFunc("POST /v1/web/session", wh.createSession)
+	mux.HandleFunc("POST /v1/web/logout", wh.logout)
+	mhMe.mount(mux)
 }
