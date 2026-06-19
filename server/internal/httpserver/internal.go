@@ -17,6 +17,7 @@ import (
 	invitesvc "github.com/woragis/minecraft-campus-backend/server/internal/invite/service"
 	playersvc "github.com/woragis/minecraft-campus-backend/server/internal/player/service"
 	presencesvc "github.com/woragis/minecraft-campus-backend/server/internal/presence"
+	statssvc "github.com/woragis/minecraft-campus-backend/server/internal/stats"
 	rollbacksvc "github.com/woragis/minecraft-campus-backend/server/internal/rollback/service"
 	trustsvc "github.com/woragis/minecraft-campus-backend/server/internal/trust/service"
 )
@@ -25,6 +26,7 @@ type internalHandler struct {
 	pluginAPIKey string
 	players      *playersvc.Service
 	presence     *presencesvc.Service
+	stats        *statssvc.Service
 	invites      *invitesvc.Service
 	guilds       *guildsvc.Service
 	trust        *trustsvc.Service
@@ -39,6 +41,7 @@ func newInternalHandler(
 	pluginAPIKey string,
 	players *playersvc.Service,
 	presence *presencesvc.Service,
+	stats *statssvc.Service,
 	invites *invitesvc.Service,
 	guilds *guildsvc.Service,
 	trust *trustsvc.Service,
@@ -52,6 +55,7 @@ func newInternalHandler(
 		pluginAPIKey: pluginAPIKey,
 		players:      players,
 		presence:     presence,
+		stats:        stats,
 		invites:      invites,
 		guilds:       guilds,
 		trust:        trust,
@@ -713,4 +717,54 @@ func (h *internalHandler) presenceHeartbeat(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+type statsIngestBody struct {
+	PlayerID       string `json:"playerId"`
+	ServerSlug     string `json:"serverSlug"`
+	SessionSeconds int64  `json:"sessionSeconds"`
+	MobKills       int64  `json:"mobKills"`
+}
+
+func (h *internalHandler) statsIngest(w http.ResponseWriter, r *http.Request) {
+	var body statsIngestBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodeStatsIngestV1HandlerBodyInvalid, apperrors.MsgStatsIngestV1HandlerBodyInvalid, err))
+		return
+	}
+	playerID, err := uuid.Parse(strings.TrimSpace(body.PlayerID))
+	if err != nil || playerID == uuid.Nil || strings.TrimSpace(body.ServerSlug) == "" {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeStatsIngestV1HandlerBodyInvalid, apperrors.MsgStatsIngestV1HandlerBodyInvalid))
+		return
+	}
+	if body.SessionSeconds <= 0 && body.MobKills <= 0 {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeStatsIngestV1HandlerBodyInvalid, apperrors.MsgStatsIngestV1HandlerBodyInvalid))
+		return
+	}
+	if err := h.stats.Ingest(r.Context(), statssvc.IngestInput{
+		PlayerID:       playerID,
+		ServerSlug:     body.ServerSlug,
+		SessionSeconds: body.SessionSeconds,
+		MobKills:       body.MobKills,
+	}); err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (h *internalHandler) playerHUD(w http.ResponseWriter, r *http.Request) {
+	playerID, err := uuid.Parse(r.PathValue("id"))
+	if err != nil || playerID == uuid.Nil {
+		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodePlayerGetV1HandlerIDInvalid, apperrors.MsgPlayerGetV1HandlerIDInvalid))
+		return
+	}
+	out, err := h.stats.GetHUD(r.Context(), playerID)
+	if err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, out)
 }

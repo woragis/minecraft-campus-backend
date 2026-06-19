@@ -20,6 +20,7 @@ type ServerPlayer struct {
 	PlayerID     uuid.UUID `gorm:"type:uuid;primaryKey;column:player_id" json:"playerId"`
 	LastSeenAt   time.Time `gorm:"not null;column:last_seen_at" json:"lastSeenAt"`
 	PlayTimeSecs int64     `gorm:"not null;default:0;column:play_time_secs" json:"playTimeSecs"`
+	MobKills     int64     `gorm:"not null;default:0;column:mob_kills" json:"mobKills"`
 }
 
 func (ServerPlayer) TableName() string { return "server_players" }

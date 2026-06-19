@@ -95,6 +95,27 @@ const (
 	MsgPresenceGuildV1ServiceFailed  = "Could not load guild presence."
 )
 
+// POST /v1/internal/stats/ingest
+const (
+	CodeStatsIngestV1HandlerBodyInvalid = "STATS_INGEST_V1_HANDLER_BODY_INVALID"
+	MsgStatsIngestV1HandlerBodyInvalid  = "Request body must include playerId, serverSlug, and sessionSeconds or mobKills."
+
+	CodeStatsIngestV1ServiceFailed = "STATS_INGEST_V1_SERVICE_FAILED"
+	MsgStatsIngestV1ServiceFailed  = "Could not ingest player stats."
+)
+
+// GET /v1/players/{id}/stats
+const (
+	CodeStatsGetV1ServiceFailed = "STATS_GET_V1_SERVICE_FAILED"
+	MsgStatsGetV1ServiceFailed  = "Could not load player stats."
+)
+
+// GET /v1/internal/players/{id}/hud
+const (
+	CodeStatsHUDV1ServiceFailed = "STATS_HUD_V1_SERVICE_FAILED"
+	MsgStatsHUDV1ServiceFailed  = "Could not load player HUD."
+)
+
 // POST /v1/internal/invites
 const (
 	CodeInvitePostInternalV1HandlerBodyInvalid = "INVITE_POST_INTERNAL_V1_HANDLER_BODY_INVALID"

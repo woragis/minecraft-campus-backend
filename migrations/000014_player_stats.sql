@@ -1,0 +1,2 @@
+ALTER TABLE server_players
+    ADD COLUMN IF NOT EXISTS mob_kills BIGINT NOT NULL DEFAULT 0;

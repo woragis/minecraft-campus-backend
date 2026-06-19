@@ -67,3 +67,48 @@ func (r *Repository) TouchPlayerPresence(ctx context.Context, serverID, playerID
 	}
 	return nil
 }
+
+func (r *Repository) AddPlayerStats(ctx context.Context, serverID, playerID uuid.UUID, sessionSeconds, mobKills int64, seenAt time.Time) error {
+	if sessionSeconds < 0 {
+		sessionSeconds = 0
+	}
+	if mobKills < 0 {
+		mobKills = 0
+	}
+	if sessionSeconds == 0 && mobKills == 0 {
+		return r.TouchPlayerPresence(ctx, serverID, playerID, seenAt)
+	}
+	err := r.db.WithContext(ctx).Exec(`
+		INSERT INTO server_players (server_id, player_id, last_seen_at, play_time_secs, mob_kills)
+		VALUES (?, ?, ?, ?, ?)
+		ON CONFLICT (server_id, player_id) DO UPDATE SET
+			last_seen_at = EXCLUDED.last_seen_at,
+			play_time_secs = server_players.play_time_secs + EXCLUDED.play_time_secs,
+			mob_kills = server_players.mob_kills + EXCLUDED.mob_kills
+	`, serverID, playerID, seenAt, sessionSeconds, mobKills).Error
+	if err != nil {
+		return fmt.Errorf("server player add stats: %w", err)
+	}
+	return nil
+}
+
+type PlayerServerStat struct {
+	ServerSlug   string `gorm:"column:server_slug"`
+	PlayTimeSecs int64  `gorm:"column:play_time_secs"`
+	MobKills     int64  `gorm:"column:mob_kills"`
+}
+
+func (r *Repository) ListPlayerStats(ctx context.Context, playerID uuid.UUID) ([]PlayerServerStat, error) {
+	var rows []PlayerServerStat
+	err := r.db.WithContext(ctx).Raw(`
+		SELECT gs.slug AS server_slug, sp.play_time_secs, sp.mob_kills
+		FROM server_players sp
+		JOIN game_servers gs ON gs.id = sp.server_id
+		WHERE sp.player_id = ?
+		ORDER BY sp.play_time_secs DESC
+	`, playerID).Scan(&rows).Error
+	if err != nil {
+		return nil, fmt.Errorf("server player list stats: %w", err)
+	}
+	return rows, nil
+}

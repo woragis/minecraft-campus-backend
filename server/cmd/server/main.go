@@ -38,6 +38,7 @@ import (
 	"github.com/woragis/minecraft-campus-backend/server/internal/migrate"
 	"github.com/woragis/minecraft-campus-backend/server/internal/presence"
 	redisplatform "github.com/woragis/minecraft-campus-backend/server/internal/platform/redis"
+	statssvc "github.com/woragis/minecraft-campus-backend/server/internal/stats"
 	playerrepo "github.com/woragis/minecraft-campus-backend/server/internal/player/repository"
 	playersvc "github.com/woragis/minecraft-campus-backend/server/internal/player/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/platform/postgres"
@@ -133,6 +134,7 @@ func main() {
 		log.Printf("redis presence enabled (ttl=%ds)", appCfg.PresenceTTLSeconds)
 	}
 	presenceService := presence.New(presenceStore, guildRepository, playerRepository)
+	statsService := statssvc.New(gameServerRepository, playerRepository, guildRepository, presenceService)
 
 	app := &httpserver.App{
 		DB:           db,
@@ -140,6 +142,7 @@ func main() {
 		Config:       appCfg,
 		Players:      playerService,
 		Presence:     presenceService,
+		Stats:        statsService,
 		Invites:      inviteService,
 		Guilds:       guildService,
 		Trust:        trustService,

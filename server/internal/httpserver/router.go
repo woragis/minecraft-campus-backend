@@ -15,7 +15,8 @@ func Mount(mux *http.ServeMux, app *App) {
 	mh := newMetricsHandler(app.Metrics)
 	alh := newAlertsHandler(app.Alerts)
 	prh := newPresenceHandler(app.Presence)
-	in := newInternalHandler(app.PluginAPIKey, app.Players, app.Presence, app.Invites, app.Guilds, app.Trust, app.Cities, app.Claims, app.Alliances, app.Audit, app.Rollback)
+	sth := newStatsHandler(app.Stats)
+	in := newInternalHandler(app.PluginAPIKey, app.Players, app.Presence, app.Stats, app.Invites, app.Guilds, app.Trust, app.Cities, app.Claims, app.Alliances, app.Audit, app.Rollback)
 
 	mux.HandleFunc("GET /health", handleHealth)
 	mux.HandleFunc("GET /ready", handleReady(app.DB))
@@ -38,6 +39,9 @@ func Mount(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("POST /v1/internal/rollbacks", in.requirePluginKey(in.createRollback))
 	mux.HandleFunc("GET /v1/internal/rollbacks/{id}/items", in.requirePluginKey(in.listRollbackItems))
 	mux.HandleFunc("POST /v1/internal/rollbacks/{id}/complete", in.requirePluginKey(in.completeRollback))
+
+	mux.HandleFunc("POST /v1/internal/stats/ingest", in.requirePluginKey(in.statsIngest))
+	mux.HandleFunc("GET /v1/internal/players/{id}/hud", in.requirePluginKey(in.playerHUD))
 
 	mux.HandleFunc("POST /v1/internal/presence/online", in.requirePluginKey(in.presenceOnline))
 	mux.HandleFunc("POST /v1/internal/presence/offline", in.requirePluginKey(in.presenceOffline))
@@ -68,6 +72,7 @@ func Mount(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /v1/guilds", gh.list)
 
 	mux.HandleFunc("GET /v1/lookup/players/minecraft/{minecraftUuid}", ph.getByMinecraftUUID)
+	mux.HandleFunc("GET /v1/players/{id}/stats", sth.playerStats)
 	mux.HandleFunc("GET /v1/players/{id}/audit-events", auh.listByPlayer)
 	mux.HandleFunc("GET /v1/players/{id}/trust-events", th.listEvents)
 	mux.HandleFunc("GET /v1/players/{id}/sponsor-tree", th.sponsorTree)
