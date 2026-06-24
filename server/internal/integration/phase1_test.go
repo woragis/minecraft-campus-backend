@@ -19,6 +19,8 @@ import (
 	"github.com/google/uuid"
 	alliancerepo "github.com/woragis/minecraft-campus-backend/server/internal/alliance/repository"
 	alliancesvc "github.com/woragis/minecraft-campus-backend/server/internal/alliance/service"
+	affiliationrepo "github.com/woragis/minecraft-campus-backend/server/internal/affiliation/repository"
+	affiliationsvc "github.com/woragis/minecraft-campus-backend/server/internal/affiliation/service"
 	alertsrepo "github.com/woragis/minecraft-campus-backend/server/internal/alerts/repository"
 	alertssvc "github.com/woragis/minecraft-campus-backend/server/internal/alerts/service"
 	auditrepo "github.com/woragis/minecraft-campus-backend/server/internal/audit/repository"
@@ -153,7 +155,9 @@ func newTestHandler(db *gorm.DB) http.Handler {
 	auditRepository := auditrepo.New(db)
 	rollbackRepository := rollbackrepo.New(db)
 	trustService := trustsvc.New(trustRepository, playerRepository)
-	playerService := playersvc.New(playerRepository, inviteRepository, gameServerRepository, 7, trustService)
+	affiliationRepository := affiliationrepo.New(db)
+	affiliationService := affiliationsvc.New(affiliationRepository)
+	playerService := playersvc.New(playerRepository, inviteRepository, gameServerRepository, 7, 14, trustService, affiliationService)
 	inviteService := invitesvc.New(inviteRepository, playerRepository)
 	guildService := guildsvc.New(guildRepository, playerRepository)
 	cityService := citysvc.New(cityRepository, playerRepository, guildRepository, gameServerRepository)
@@ -165,7 +169,7 @@ func newTestHandler(db *gorm.DB) http.Handler {
 	metricsService := metricssvc.New(db)
 	alertsService := alertssvc.New(testCfg, alertsrepo.New(db))
 	presenceService := presence.New(presence.NewNoopStore(), guildRepository, playerRepository)
-	statsService := statssvc.New(gameServerRepository, playerRepository, guildRepository, presenceService)
+	statsService := statssvc.New(gameServerRepository, playerRepository, guildRepository, presenceService, affiliationService)
 	webAuthService := webauth.New(5*time.Minute, 24*time.Hour)
 	app := &httpserver.App{
 		DB:           db,
@@ -174,6 +178,7 @@ func newTestHandler(db *gorm.DB) http.Handler {
 		Players:      playerService,
 		Presence:     presenceService,
 		Stats:        statsService,
+		Affiliation:  affiliationService,
 		WebAuth:      webAuthService,
 		Invites:      inviteService,
 		Guilds:       guildService,

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/woragis/minecraft-campus-backend/server/internal/apperrors"
+	affiliationsvc "github.com/woragis/minecraft-campus-backend/server/internal/affiliation/service"
 	gameserverrepo "github.com/woragis/minecraft-campus-backend/server/internal/gameserver/repository"
 	guildrepo "github.com/woragis/minecraft-campus-backend/server/internal/guild/repository"
 	"github.com/woragis/minecraft-campus-backend/server/internal/presence"
@@ -31,6 +32,18 @@ type PlayerStats struct {
 type HUD struct {
 	Username         string `json:"username"`
 	Status           string `json:"status"`
+	AffiliationType  string `json:"affiliationType"`
+	UniversitySlug   string `json:"universitySlug,omitempty"`
+	FacultySlug      string `json:"facultySlug,omitempty"`
+	CourseSlug       string `json:"courseSlug,omitempty"`
+	UniversityName   string `json:"universityName,omitempty"`
+	UniversityHex    string `json:"universityHex,omitempty"`
+	FacultyName      string `json:"facultyName,omitempty"`
+	FacultyAbbr      string `json:"facultyAbbr,omitempty"`
+	FacultyHex       string `json:"facultyHex,omitempty"`
+	CourseName       string `json:"courseName,omitempty"`
+	CourseAbbr       string `json:"courseAbbr,omitempty"`
+	CourseHex        string `json:"courseHex,omitempty"`
 	GuildID          string `json:"guildId,omitempty"`
 	GuildName        string `json:"guildName,omitempty"`
 	GuildSlug        string `json:"guildSlug,omitempty"`
@@ -49,6 +62,7 @@ type Service struct {
 	playerRepo     *playerrepo.Repository
 	guildRepo      *guildrepo.Repository
 	presence       *presence.Service
+	affiliation    *affiliationsvc.Service
 }
 
 func New(
@@ -56,12 +70,14 @@ func New(
 	playerRepo *playerrepo.Repository,
 	guildRepo *guildrepo.Repository,
 	presenceSvc *presence.Service,
+	affiliationSvc *affiliationsvc.Service,
 ) *Service {
 	return &Service{
 		gameServerRepo: gameServerRepo,
 		playerRepo:     playerRepo,
 		guildRepo:      guildRepo,
 		presence:       presenceSvc,
+		affiliation:    affiliationSvc,
 	}
 }
 
@@ -131,8 +147,29 @@ func (s *Service) GetHUD(ctx context.Context, playerID uuid.UUID) (*HUD, error) 
 		return nil, apperrors.InternalCause(apperrors.CodeStatsHUDV1ServiceFailed, apperrors.MsgStatsHUDV1ServiceFailed, err)
 	}
 	out := &HUD{
-		Username: player.Username,
-		Status:   player.Status,
+		Username:        player.Username,
+		Status:          player.Status,
+		AffiliationType: player.AffiliationType,
+	}
+	if player.UniversitySlug != nil {
+		out.UniversitySlug = *player.UniversitySlug
+	}
+	if player.FacultySlug != nil {
+		out.FacultySlug = *player.FacultySlug
+	}
+	if player.CourseSlug != nil {
+		out.CourseSlug = *player.CourseSlug
+	}
+	if s.affiliation != nil {
+		labels := s.affiliation.ResolveLabels(ctx, player)
+		out.UniversityName = labels.UniversityName
+		out.UniversityHex = labels.UniversityHex
+		out.FacultyName = labels.FacultyName
+		out.FacultyAbbr = labels.FacultyAbbr
+		out.FacultyHex = labels.FacultyHex
+		out.CourseName = labels.CourseName
+		out.CourseAbbr = labels.CourseAbbr
+		out.CourseHex = labels.CourseHex
 	}
 	guild, err := s.guildRepo.PlayerGuild(ctx, playerID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {

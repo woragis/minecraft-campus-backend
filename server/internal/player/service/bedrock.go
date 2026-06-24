@@ -82,7 +82,7 @@ func (s *Service) CheckBedrockWhitelist(ctx context.Context, xuid, username stri
 	}
 
 	now := time.Now().UTC()
-	probationUntil := now.Add(time.Duration(s.probationDays) * 24 * time.Hour)
+	probationUntil := now.Add(time.Duration(s.probationDaysFor(invite)) * 24 * time.Hour)
 	sponsorID := invite.SponsorID
 
 	newPlayer := &models.Player{
@@ -95,6 +95,7 @@ func (s *Service) CheckBedrockWhitelist(ctx context.Context, xuid, username stri
 		SponsorScore:   100,
 		ProbationUntil: &probationUntil,
 	}
+	applyAffiliationFromInvite(newPlayer, invite)
 	if err := s.repo.Create(ctx, newPlayer); err != nil {
 		return nil, apperrors.InternalCause(apperrors.CodeBedrockWhitelistGetV1ServiceCheckFailed, apperrors.MsgBedrockWhitelistGetV1ServiceCheckFailed, err)
 	}
@@ -160,7 +161,7 @@ func (s *Service) UpsertBedrockFromServer(ctx context.Context, xuid, username, s
 			}
 			return nil, apperrors.InternalCause(apperrors.CodeBedrockPlayerUpsertV1ServiceFailed, apperrors.MsgBedrockPlayerUpsertV1ServiceFailed, invErr)
 		}
-		probationUntil := now.Add(time.Duration(s.probationDays) * 24 * time.Hour)
+		probationUntil := now.Add(time.Duration(s.probationDaysFor(invite)) * 24 * time.Hour)
 		sponsorID := invite.SponsorID
 		player = &models.Player{
 			ID:             uuid.New(),
@@ -172,6 +173,7 @@ func (s *Service) UpsertBedrockFromServer(ctx context.Context, xuid, username, s
 			SponsorScore:   100,
 			ProbationUntil: &probationUntil,
 		}
+		applyAffiliationFromInvite(player, invite)
 		if err := s.repo.Create(ctx, player); err != nil {
 			return nil, apperrors.InternalCause(apperrors.CodeBedrockPlayerUpsertV1ServiceFailed, apperrors.MsgBedrockPlayerUpsertV1ServiceFailed, err)
 		}

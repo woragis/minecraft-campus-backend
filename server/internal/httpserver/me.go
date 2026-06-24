@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/woragis/minecraft-campus-backend/server/internal/apperrors"
+	affiliationsvc "github.com/woragis/minecraft-campus-backend/server/internal/affiliation/service"
 	guildsvc "github.com/woragis/minecraft-campus-backend/server/internal/guild/service"
 	invitesvc "github.com/woragis/minecraft-campus-backend/server/internal/invite/service"
 	playersvc "github.com/woragis/minecraft-campus-backend/server/internal/player/service"
@@ -24,6 +25,7 @@ func newMeHandler(players *playersvc.Service, invites *invitesvc.Service, guilds
 
 func (h *meHandler) mount(mux *http.ServeMux) {
 	mux.HandleFunc("GET /v1/me", h.web.requireSession(h.profile))
+	mux.HandleFunc("PATCH /v1/me/affiliation", h.web.requireSession(h.patchAffiliation))
 	mux.HandleFunc("POST /v1/me/invites", h.web.requireSession(h.createInvite))
 	mux.HandleFunc("POST /v1/me/guilds", h.web.requireSession(h.createGuild))
 	mux.HandleFunc("POST /v1/me/guilds/{slug}/join", h.web.requireSession(h.joinGuild))
@@ -45,7 +47,8 @@ func (h *meHandler) profile(w http.ResponseWriter, r *http.Request, session *web
 }
 
 type meInviteBody struct {
-	TargetUsername string `json:"targetUsername"`
+	TargetUsername  string `json:"targetUsername"`
+	AffiliationType string `json:"affiliationType"`
 }
 
 func (h *meHandler) createInvite(w http.ResponseWriter, r *http.Request, session *webauth.Session) {
@@ -56,7 +59,7 @@ func (h *meHandler) createInvite(w http.ResponseWriter, r *http.Request, session
 		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodeInvitePostInternalV1HandlerBodyInvalid, apperrors.MsgInvitePostInternalV1HandlerBodyInvalid, err))
 		return
 	}
-	inv, err := h.invites.CreateForSponsor(r.Context(), session.MinecraftUUID, body.TargetUsername)
+	inv, err := h.invites.CreateForSponsor(r.Context(), session.MinecraftUUID, body.TargetUsername, body.AffiliationType)
 	if err != nil {
 		apperrors.WriteError(w, err)
 		return
@@ -98,4 +101,32 @@ func (h *meHandler) leaveGuild(w http.ResponseWriter, r *http.Request, session *
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "left"})
+}
+
+type meAffiliationBody struct {
+	AffiliationType string  `json:"affiliationType"`
+	UniversitySlug  *string `json:"universitySlug"`
+	FacultySlug     *string `json:"facultySlug"`
+	CourseSlug      *string `json:"courseSlug"`
+}
+
+func (h *meHandler) patchAffiliation(w http.ResponseWriter, r *http.Request, session *webauth.Session) {
+	var body meAffiliationBody
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&body); err != nil {
+		apperrors.WriteError(w, apperrors.InvalidCause(apperrors.CodeAffiliationPatchV1HandlerBodyInvalid, apperrors.MsgAffiliationPatchV1HandlerBodyInvalid, err))
+		return
+	}
+	player, err := h.players.UpdateAffiliation(r.Context(), session.PlayerID, affiliationsvc.AffiliationInput{
+		AffiliationType: body.AffiliationType,
+		UniversitySlug:  body.UniversitySlug,
+		FacultySlug:     body.FacultySlug,
+		CourseSlug:      body.CourseSlug,
+	})
+	if err != nil {
+		apperrors.WriteError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, player)
 }

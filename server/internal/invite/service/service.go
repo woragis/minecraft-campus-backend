@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	affiliationsvc "github.com/woragis/minecraft-campus-backend/server/internal/affiliation/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/apperrors"
 	"github.com/woragis/minecraft-campus-backend/server/internal/invite/repository"
 	"github.com/woragis/minecraft-campus-backend/server/internal/models"
@@ -38,7 +39,7 @@ func (s *Service) GetByCode(ctx context.Context, code string) (*models.Invite, e
 	return inv, nil
 }
 
-func (s *Service) CreateForSponsor(ctx context.Context, sponsorMinecraftUUID uuid.UUID, targetUsername string) (*models.Invite, error) {
+func (s *Service) CreateForSponsor(ctx context.Context, sponsorMinecraftUUID uuid.UUID, targetUsername, affiliationType string) (*models.Invite, error) {
 	targetUsername = strings.TrimSpace(targetUsername)
 	if targetUsername == "" {
 		return nil, apperrors.Invalid(apperrors.CodeInvitePostInternalV1HandlerBodyInvalid, apperrors.MsgInvitePostInternalV1HandlerBodyInvalid)
@@ -72,11 +73,12 @@ func (s *Service) CreateForSponsor(ctx context.Context, sponsorMinecraftUUID uui
 	}
 
 	inv := &models.Invite{
-		ID:             uuid.New(),
-		Code:           code,
-		SponsorID:      sponsor.ID,
-		TargetUsername: targetUsername,
-		Status:         models.InviteStatusPending,
+		ID:              uuid.New(),
+		Code:            code,
+		SponsorID:       sponsor.ID,
+		TargetUsername:  targetUsername,
+		AffiliationType: affiliationsvc.NormalizeInviteAffiliationType(affiliationType),
+		Status:          models.InviteStatusPending,
 	}
 	if err := s.repo.Create(ctx, inv); err != nil {
 		return nil, apperrors.InternalCause(apperrors.CodeInvitePostInternalV1ServiceCreateFailed, apperrors.MsgInvitePostInternalV1ServiceCreateFailed, err)

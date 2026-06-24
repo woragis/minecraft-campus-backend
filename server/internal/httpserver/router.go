@@ -17,6 +17,7 @@ func Mount(mux *http.ServeMux, app *App) {
 	prh := newPresenceHandler(app.Presence)
 	sth := newStatsHandler(app.Stats)
 	wh := newWebHandler(app.WebAuth)
+	cat := newCatalogHandler(app.Affiliation)
 	mhMe := newMeHandler(app.Players, app.Invites, app.Guilds, wh)
 	in := newInternalHandler(app.PluginAPIKey, app.Players, app.Presence, app.Stats, app.Invites, app.Guilds, app.Trust, app.Cities, app.Claims, app.Alliances, app.Audit, app.Rollback, app.WebAuth)
 
@@ -55,6 +56,10 @@ func Mount(mux *http.ServeMux, app *App) {
 	mux.HandleFunc("GET /v1/presence/overview", prh.overview)
 	mux.HandleFunc("GET /v1/presence/servers/{slug}", prh.server)
 	mux.HandleFunc("GET /v1/presence/guilds/{id}", prh.guild)
+
+	mux.HandleFunc("GET /v1/catalog/universities", cat.listUniversities)
+	mux.HandleFunc("GET /v1/catalog/faculties", cat.listFaculties)
+	mux.HandleFunc("GET /v1/catalog/courses", cat.listCourses)
 
 	mux.HandleFunc("GET /v1/rollbacks/{id}", rbh.getByID)
 

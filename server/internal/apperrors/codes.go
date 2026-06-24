@@ -526,3 +526,48 @@ const (
 	CodeWebSessionV1HandlerInvalid = "WEB_SESSION_V1_HANDLER_INVALID"
 	MsgWebSessionV1HandlerInvalid  = "Session token is invalid or expired."
 )
+
+// Catalog + affiliation
+const (
+	CodeCatalogListV1ServiceFailed = "CATALOG_LIST_V1_SERVICE_FAILED"
+	MsgCatalogListV1ServiceFailed  = "Could not load affiliation catalog."
+
+	CodeAffiliationPatchV1HandlerBodyInvalid = "AFFILIATION_PATCH_V1_HANDLER_BODY_INVALID"
+	MsgAffiliationPatchV1HandlerBodyInvalid  = "Request body is invalid."
+
+	CodeAffiliationPatchV1ServiceFailed = "AFFILIATION_PATCH_V1_SERVICE_FAILED"
+	MsgAffiliationPatchV1ServiceFailed  = "Could not update affiliation."
+
+	CodeAffiliationPatchV1ServiceTypeInvalid = "AFFILIATION_PATCH_V1_SERVICE_TYPE_INVALID"
+	MsgAffiliationPatchV1ServiceTypeInvalid  = "affiliationType must be student, staff, guest, or alumni."
+
+	CodeAffiliationPatchV1ServiceCatalogIncomplete = "AFFILIATION_PATCH_V1_SERVICE_CATALOG_INCOMPLETE"
+	MsgAffiliationPatchV1ServiceCatalogIncomplete  = "student and alumni require universitySlug, facultySlug, and courseSlug."
+
+	CodeAffiliationPatchV1ServiceUniversityNotFound = "AFFILIATION_PATCH_V1_SERVICE_UNIVERSITY_NOT_FOUND"
+	MsgAffiliationPatchV1ServiceUniversityNotFound  = "University not found in catalog."
+
+	CodeAffiliationPatchV1ServiceFacultyNotFound = "AFFILIATION_PATCH_V1_SERVICE_FACULTY_NOT_FOUND"
+	MsgAffiliationPatchV1ServiceFacultyNotFound  = "Faculty not found in catalog."
+
+	CodeAffiliationPatchV1ServiceCourseNotFound = "AFFILIATION_PATCH_V1_SERVICE_COURSE_NOT_FOUND"
+	MsgAffiliationPatchV1ServiceCourseNotFound  = "Course not found in catalog."
+
+	CodeAffiliationPatchV1ServiceFacultyMismatch = "AFFILIATION_PATCH_V1_SERVICE_FACULTY_MISMATCH"
+	MsgAffiliationPatchV1ServiceFacultyMismatch  = "Faculty does not belong to the selected university."
+
+	CodeAffiliationPatchV1ServiceCourseMismatch = "AFFILIATION_PATCH_V1_SERVICE_COURSE_MISMATCH"
+	MsgAffiliationPatchV1ServiceCourseMismatch  = "Course does not belong to the selected faculty."
+
+	CodeAffiliationPatchV1ServiceGuestLocked = "AFFILIATION_PATCH_V1_SERVICE_GUEST_LOCKED"
+	MsgAffiliationPatchV1ServiceGuestLocked  = "Guest accounts cannot change affiliation type."
+
+	CodeGuildPostV1ServiceGuestLeader = "GUILD_POST_V1_SERVICE_GUEST_LEADER"
+	MsgGuildPostV1ServiceGuestLeader  = "Guests cannot create or lead guilds."
+
+	CodeCityPostV1ServiceGuestFounder = "CITY_POST_V1_SERVICE_GUEST_FOUNDER"
+	MsgCityPostV1ServiceGuestFounder  = "Guests cannot create cities."
+
+	CodeClaimPostV1ServiceGuest = "CLAIM_POST_V1_SERVICE_GUEST"
+	MsgClaimPostV1ServiceGuest  = "Guests cannot create claims."
+)

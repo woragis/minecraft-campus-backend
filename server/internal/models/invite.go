@@ -18,6 +18,7 @@ type Invite struct {
 	Code             string     `gorm:"not null" json:"code"`
 	SponsorID        uuid.UUID  `gorm:"type:uuid;not null;column:sponsor_id" json:"sponsorId"`
 	TargetUsername   string     `gorm:"not null;column:target_username" json:"targetUsername"`
+	AffiliationType  string     `gorm:"not null;default:student;column:affiliation_type" json:"affiliationType"`
 	InvitedPlayerID  *uuid.UUID `gorm:"type:uuid;column:invited_player_id" json:"invitedPlayerId,omitempty"`
 	Status           string     `gorm:"not null;default:pending" json:"status"`
 	CreatedAt        time.Time  `json:"createdAt"`

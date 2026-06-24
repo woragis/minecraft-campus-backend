@@ -52,6 +52,9 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (*models.City, err
 	if founder.Status == models.PlayerStatusProbation || founder.Status == models.PlayerStatusBanned {
 		return nil, apperrors.Forbidden(apperrors.CodeCityPostV1ServiceFounderRestricted, apperrors.MsgCityPostV1ServiceFounderRestricted)
 	}
+	if founder.IsGuest() {
+		return nil, apperrors.Forbidden(apperrors.CodeCityPostV1ServiceGuestFounder, apperrors.MsgCityPostV1ServiceGuestFounder)
+	}
 
 	world := strings.TrimSpace(in.World)
 	if world == "" {

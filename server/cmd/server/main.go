@@ -13,6 +13,8 @@ import (
 
 	alliancerepo "github.com/woragis/minecraft-campus-backend/server/internal/alliance/repository"
 	alliancesvc "github.com/woragis/minecraft-campus-backend/server/internal/alliance/service"
+	affiliationrepo "github.com/woragis/minecraft-campus-backend/server/internal/affiliation/repository"
+	affiliationsvc "github.com/woragis/minecraft-campus-backend/server/internal/affiliation/service"
 	alertsrepo "github.com/woragis/minecraft-campus-backend/server/internal/alerts/repository"
 	alertssvc "github.com/woragis/minecraft-campus-backend/server/internal/alerts/service"
 	auditrepo "github.com/woragis/minecraft-campus-backend/server/internal/audit/repository"
@@ -59,6 +61,7 @@ func main() {
 		log.Fatal("PLUGIN_API_KEY is required")
 	}
 	probationDays := envInt("PROBATION_DAYS", 7)
+	guestProbationDays := envInt("GUEST_PROBATION_DAYS", 14)
 
 	db, err := postgres.Open(dsn)
 	if err != nil {
@@ -113,7 +116,9 @@ func main() {
 	}
 
 	trustService := trustsvc.New(trustRepository, playerRepository)
-	playerService := playersvc.New(playerRepository, inviteRepository, gameServerRepository, probationDays, trustService)
+	affiliationRepository := affiliationrepo.New(db)
+	affiliationService := affiliationsvc.New(affiliationRepository)
+	playerService := playersvc.New(playerRepository, inviteRepository, gameServerRepository, probationDays, guestProbationDays, trustService, affiliationService)
 	inviteService := invitesvc.New(inviteRepository, playerRepository)
 	guildService := guildsvc.New(guildRepository, playerRepository)
 	cityService := citysvc.New(cityRepository, playerRepository, guildRepository, gameServerRepository)
@@ -135,7 +140,7 @@ func main() {
 		log.Printf("redis presence enabled (ttl=%ds)", appCfg.PresenceTTLSeconds)
 	}
 	presenceService := presence.New(presenceStore, guildRepository, playerRepository)
-	statsService := statssvc.New(gameServerRepository, playerRepository, guildRepository, presenceService)
+	statsService := statssvc.New(gameServerRepository, playerRepository, guildRepository, presenceService, affiliationService)
 	webAuthService := webauth.New(5*time.Minute, 24*time.Hour)
 
 	app := &httpserver.App{
@@ -145,6 +150,7 @@ func main() {
 		Players:      playerService,
 		Presence:     presenceService,
 		Stats:        statsService,
+		Affiliation:  affiliationService,
 		WebAuth:      webAuthService,
 		Invites:      inviteService,
 		Guilds:       guildService,

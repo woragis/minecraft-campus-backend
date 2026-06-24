@@ -158,8 +158,9 @@ func (h *internalHandler) upsertPlayer(w http.ResponseWriter, r *http.Request) {
 }
 
 type createInviteBody struct {
-	SponsorUUID    string `json:"sponsorUuid"`
-	TargetUsername string `json:"targetUsername"`
+	SponsorUUID     string `json:"sponsorUuid"`
+	TargetUsername  string `json:"targetUsername"`
+	AffiliationType string `json:"affiliationType"`
 }
 
 func (h *internalHandler) createInvite(w http.ResponseWriter, r *http.Request) {
@@ -175,7 +176,7 @@ func (h *internalHandler) createInvite(w http.ResponseWriter, r *http.Request) {
 		apperrors.WriteError(w, apperrors.Invalid(apperrors.CodeInvitePostInternalV1HandlerBodyInvalid, apperrors.MsgInvitePostInternalV1HandlerBodyInvalid))
 		return
 	}
-	inv, err := h.invites.CreateForSponsor(r.Context(), sponsorUUID, body.TargetUsername)
+	inv, err := h.invites.CreateForSponsor(r.Context(), sponsorUUID, body.TargetUsername, body.AffiliationType)
 	if err != nil {
 		apperrors.WriteError(w, err)
 		return

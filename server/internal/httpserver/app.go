@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	alliancesvc "github.com/woragis/minecraft-campus-backend/server/internal/alliance/service"
+	affiliationsvc "github.com/woragis/minecraft-campus-backend/server/internal/affiliation/service"
 	alertssvc "github.com/woragis/minecraft-campus-backend/server/internal/alerts/service"
 	auditsvc "github.com/woragis/minecraft-campus-backend/server/internal/audit/service"
 	citysvc "github.com/woragis/minecraft-campus-backend/server/internal/city/service"
@@ -26,6 +27,7 @@ type App struct {
 	Players      *playersvc.Service
 	Presence     *presencesvc.Service
 	Stats        *statssvc.Service
+	Affiliation  *affiliationsvc.Service
 	WebAuth      *webauth.Service
 	Invites      *invitesvc.Service
 	Guilds       *guildsvc.Service

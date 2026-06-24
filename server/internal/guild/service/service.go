@@ -225,6 +225,9 @@ func (s *Service) assertCanManageGuild(ctx context.Context, player *models.Playe
 	if player.Status == models.PlayerStatusProbation {
 		return apperrors.Forbidden(apperrors.CodeGuildPostV1ServiceLeaderProbation, apperrors.MsgGuildPostV1ServiceLeaderProbation)
 	}
+	if player.IsGuest() {
+		return apperrors.Forbidden(apperrors.CodeGuildPostV1ServiceGuestLeader, apperrors.MsgGuildPostV1ServiceGuestLeader)
+	}
 	return nil
 }
 

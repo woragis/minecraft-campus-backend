@@ -60,6 +60,9 @@ func (s *Service) Create(ctx context.Context, in CreateInput) (*models.Claim, er
 	if owner.Status == models.PlayerStatusBanned {
 		return nil, apperrors.Forbidden(apperrors.CodeClaimPostV1ServiceBanned, apperrors.MsgClaimPostV1ServiceBanned)
 	}
+	if owner.IsGuest() {
+		return nil, apperrors.Forbidden(apperrors.CodeClaimPostV1ServiceGuest, apperrors.MsgClaimPostV1ServiceGuest)
+	}
 
 	minX, maxX, minZ, maxZ := territory.NormalizeBounds(in.MinX, in.MaxX, in.MinZ, in.MaxZ)
 	area := territory.HorizontalArea(minX, maxX, minZ, maxZ)

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	affiliationsvc "github.com/woragis/minecraft-campus-backend/server/internal/affiliation/service"
 	"github.com/woragis/minecraft-campus-backend/server/internal/apperrors"
 	gameserverrepo "github.com/woragis/minecraft-campus-backend/server/internal/gameserver/repository"
 	inviterepo "github.com/woragis/minecraft-campus-backend/server/internal/invite/repository"
@@ -26,23 +27,50 @@ type ProbationGraduator interface {
 }
 
 type Service struct {
-	repo           *repository.Repository
-	inviteRepo     *inviterepo.Repository
-	gameServerRepo *gameserverrepo.Repository
-	probationDays  int
-	graduator      ProbationGraduator
+	repo               *repository.Repository
+	inviteRepo         *inviterepo.Repository
+	gameServerRepo     *gameserverrepo.Repository
+	probationDays      int
+	guestProbationDays int
+	graduator          ProbationGraduator
+	affiliation        *affiliationsvc.Service
 }
 
-func New(repo *repository.Repository, inviteRepo *inviterepo.Repository, gameServerRepo *gameserverrepo.Repository, probationDays int, graduator ProbationGraduator) *Service {
+func New(repo *repository.Repository, inviteRepo *inviterepo.Repository, gameServerRepo *gameserverrepo.Repository, probationDays, guestProbationDays int, graduator ProbationGraduator, affiliation *affiliationsvc.Service) *Service {
 	if probationDays <= 0 {
 		probationDays = 7
 	}
+	if guestProbationDays <= 0 {
+		guestProbationDays = 14
+	}
 	return &Service{
-		repo:           repo,
-		inviteRepo:     inviteRepo,
-		gameServerRepo: gameServerRepo,
-		probationDays:  probationDays,
-		graduator:      graduator,
+		repo:               repo,
+		inviteRepo:         inviteRepo,
+		gameServerRepo:     gameServerRepo,
+		probationDays:      probationDays,
+		guestProbationDays: guestProbationDays,
+		graduator:          graduator,
+		affiliation:        affiliation,
+	}
+}
+
+func (s *Service) probationDaysFor(invite *models.Invite) int {
+	if invite != nil && invite.AffiliationType == models.AffiliationGuest {
+		return s.guestProbationDays
+	}
+	return s.probationDays
+}
+
+func applyAffiliationFromInvite(player *models.Player, invite *models.Invite) {
+	if player == nil || invite == nil {
+		return
+	}
+	affType := affiliationsvc.NormalizeInviteAffiliationType(invite.AffiliationType)
+	player.AffiliationType = affType
+	if affType == models.AffiliationGuest {
+		player.UniversitySlug = nil
+		player.FacultySlug = nil
+		player.CourseSlug = nil
 	}
 }
 
@@ -121,7 +149,7 @@ func (s *Service) CheckWhitelist(ctx context.Context, minecraftUUID uuid.UUID, u
 	}
 
 	now := time.Now().UTC()
-	probationUntil := now.Add(time.Duration(s.probationDays) * 24 * time.Hour)
+	probationUntil := now.Add(time.Duration(s.probationDaysFor(invite)) * 24 * time.Hour)
 	sponsorID := invite.SponsorID
 
 	newPlayer := &models.Player{
@@ -134,6 +162,7 @@ func (s *Service) CheckWhitelist(ctx context.Context, minecraftUUID uuid.UUID, u
 		SponsorScore:   100,
 		ProbationUntil: &probationUntil,
 	}
+	applyAffiliationFromInvite(newPlayer, invite)
 	if err := s.repo.Create(ctx, newPlayer); err != nil {
 		return nil, apperrors.InternalCause(apperrors.CodeWhitelistGetV1ServiceCheckFailed, apperrors.MsgWhitelistGetV1ServiceCheckFailed, err)
 	}
@@ -185,7 +214,7 @@ func (s *Service) UpsertFromPlugin(ctx context.Context, minecraftUUID uuid.UUID,
 			}
 			return nil, apperrors.InternalCause(apperrors.CodePlayerUpsertV1ServiceFailed, apperrors.MsgPlayerUpsertV1ServiceFailed, invErr)
 		}
-		probationUntil := now.Add(time.Duration(s.probationDays) * 24 * time.Hour)
+		probationUntil := now.Add(time.Duration(s.probationDaysFor(invite)) * 24 * time.Hour)
 		sponsorID := invite.SponsorID
 		player = &models.Player{
 			ID:             uuid.New(),
@@ -197,6 +226,7 @@ func (s *Service) UpsertFromPlugin(ctx context.Context, minecraftUUID uuid.UUID,
 			SponsorScore:   100,
 			ProbationUntil: &probationUntil,
 		}
+		applyAffiliationFromInvite(player, invite)
 		if err := s.repo.Create(ctx, player); err != nil {
 			return nil, apperrors.InternalCause(apperrors.CodePlayerUpsertV1ServiceFailed, apperrors.MsgPlayerUpsertV1ServiceFailed, err)
 		}
@@ -214,5 +244,38 @@ func (s *Service) UpsertFromPlugin(ctx context.Context, minecraftUUID uuid.UUID,
 		return nil, apperrors.InternalCause(apperrors.CodePlayerUpsertV1ServiceFailed, apperrors.MsgPlayerUpsertV1ServiceFailed, err)
 	}
 	s.maybeGraduate(ctx, player)
+	return player, nil
+}
+
+func (s *Service) UpdateAffiliation(ctx context.Context, playerID uuid.UUID, in affiliationsvc.AffiliationInput) (*models.Player, error) {
+	player, err := s.repo.FindByID(ctx, playerID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, apperrors.NotFound(apperrors.CodePlayerGetV1ServiceNotFound, apperrors.MsgPlayerGetV1ServiceNotFound)
+		}
+		return nil, apperrors.InternalCause(apperrors.CodeAffiliationPatchV1ServiceFailed, apperrors.MsgAffiliationPatchV1ServiceFailed, err)
+	}
+	if player.IsGuest() {
+		return nil, apperrors.Forbidden(apperrors.CodeAffiliationPatchV1ServiceGuestLocked, apperrors.MsgAffiliationPatchV1ServiceGuestLocked)
+	}
+	if s.affiliation == nil {
+		return nil, apperrors.InternalErr(apperrors.CodeAffiliationPatchV1ServiceFailed, apperrors.MsgAffiliationPatchV1ServiceFailed)
+	}
+	normalized, err := s.affiliation.ValidateAndNormalize(ctx, in)
+	if err != nil {
+		return nil, err
+	}
+	player.AffiliationType = normalized.AffiliationType
+	player.UniversitySlug = normalized.UniversitySlug
+	player.FacultySlug = normalized.FacultySlug
+	player.CourseSlug = normalized.CourseSlug
+	if normalized.AffiliationType == models.AffiliationGuest {
+		player.UniversitySlug = nil
+		player.FacultySlug = nil
+		player.CourseSlug = nil
+	}
+	if err := s.repo.Update(ctx, player); err != nil {
+		return nil, apperrors.InternalCause(apperrors.CodeAffiliationPatchV1ServiceFailed, apperrors.MsgAffiliationPatchV1ServiceFailed, err)
+	}
 	return player, nil
 }
